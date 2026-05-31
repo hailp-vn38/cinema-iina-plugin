@@ -33,6 +33,7 @@ const playbackStateService = createPlaybackStateService({
 const playbackService = createPlaybackService({
   core,
   mpv,
+  sidebar,
   playbackStore,
   runtimeStore,
   sidebarSyncService,

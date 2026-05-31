@@ -42,6 +42,41 @@ export function useRuntimeBridge() {
     iinaClient.post(UI_COMMANDS.REQUEST_DIAGNOSTIC, {
       requestId: "phase-4-init",
     });
+
+    function requestRuntimeSync() {
+      recordOutboundCommand(UI_COMMANDS.REQUEST_RUNTIME_SYNC);
+      iinaClient.post(UI_COMMANDS.REQUEST_RUNTIME_SYNC, {
+        requestId: "runtime-sync-" + Date.now(),
+      });
+    }
+
+    function handleVisibilityChange() {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        requestRuntimeSync();
+      }
+    }
+
+    function handleWindowFocus() {
+      requestRuntimeSync();
+    }
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", handleWindowFocus);
+    }
+
+    return () => {
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", handleWindowFocus);
+      }
+    };
   }, [
     applyAppState,
     applyDiagnostic,

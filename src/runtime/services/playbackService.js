@@ -1,6 +1,7 @@
 export function createPlaybackService({
   core,
   mpv,
+  sidebar,
   playbackStore,
   runtimeStore,
   sidebarSyncService,
@@ -113,6 +114,7 @@ export function createPlaybackService({
       sidebarSyncService.syncState();
       runtimeStore.setState("ready", "Dang phat: " + (payload.episodeName || "episode"));
       sidebarSyncService.syncAll();
+      sidebar.hide();
     },
     playAll(payload) {
       const entries = validateEntries(payload);
@@ -148,6 +150,7 @@ export function createPlaybackService({
       sidebarSyncService.syncState();
       runtimeStore.setState("ready", "Dang phat va da them " + entries.length + " tap.");
       sidebarSyncService.syncAll();
+      sidebar.hide();
     },
   };
 }

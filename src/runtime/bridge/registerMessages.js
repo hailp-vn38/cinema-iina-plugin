@@ -20,6 +20,11 @@ export function registerMessages({
     sidebarSyncService.syncDiagnostic();
   });
 
+  bus.on(UI_COMMANDS.REQUEST_RUNTIME_SYNC, () => {
+    diagnosticService.recordUiMessage(UI_COMMANDS.REQUEST_RUNTIME_SYNC);
+    sidebarSyncService.syncAll();
+  });
+
   bus.on(UI_COMMANDS.PLAY_EPISODE, (payload) => {
     diagnosticService.recordUiMessage(UI_COMMANDS.PLAY_EPISODE);
     diagnosticService.recordPlayStage("received-play-episode", {
