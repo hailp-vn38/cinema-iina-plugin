@@ -1,41 +1,76 @@
-import { COMMAND_MODEL_SHAPES, EVENT_MODEL_SHAPES } from "@shared/contracts/models.js";
-import { DiagnosticPanel } from "./components/diagnostic/DiagnosticPanel.jsx";
-import { CatalogView } from "./components/catalog/CatalogView.jsx";
-import { CategoryChips } from "./components/catalog/CategoryChips.jsx";
-import { SearchPanel } from "./components/catalog/SearchPanel.jsx";
-import { Header } from "./components/layout/Header.jsx";
-import { StatusPanel } from "./components/layout/StatusPanel.jsx";
-import { SourceSelector } from "./components/source/SourceSelector.jsx";
-import { useCatalogActions } from "./hooks/useCatalogActions.js";
-import { useRuntimeBridge } from "./hooks/useRuntimeBridge.js";
+import { useEffect, useRef } from "react";
 import { useAppStore } from "./store/appStore.js";
+import { useRuntimeBridge } from "./hooks/useRuntimeBridge.js";
+import { useCatalogActions } from "./hooks/useCatalogActions.js";
+import { Header } from "./components/layout/Header.jsx";
+import { SourceSelector } from "./components/source/SourceSelector.jsx";
+import { CatalogView } from "./components/catalog/CatalogView.jsx";
 
 export default function App() {
   useRuntimeBridge();
-  const { loadCategory, search } = useCatalogActions();
 
   const sources = useAppStore((state) => state.sources);
   const activeSourceId = useAppStore((state) => state.activeSourceId);
   const setActiveSource = useAppStore((state) => state.setActiveSource);
-  const status = useAppStore((state) => state.status);
-  const message = useAppStore((state) => state.message);
-  const connected = useAppStore((state) => state.connected);
-  const lastEventName = useAppStore((state) => state.lastEventName);
-  const runtimeEventCount = useAppStore((state) => state.runtimeEventCount);
-  const diagnostic = useAppStore((state) => state.diagnostic);
   const catalog = useAppStore((state) => state.catalog);
+  const status = useAppStore((state) => state.status);
+
+  const { loadHome, loadMore } = useCatalogActions();
+  const appShellRef = useRef(null);
+  const lastScrollRef = useRef(0);
+
+  // Load catalog home on mount
+  useEffect(() => {
+    console.log("[App] Component mounted, triggering initial loadHome");
+    loadHome();
+  }, []);
+
+  // Load catalog home when source changes
+  useEffect(() => {
+    console.log("[App] activeSourceId changed to:", activeSourceId);
+    loadHome();
+  }, [activeSourceId, loadHome]);
+
+  // Pull-to-refresh handler
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const scrollTop = e.target.scrollTop;
+      const delta = scrollTop - lastScrollRef.current;
+      lastScrollRef.current = scrollTop;
+
+      // Detect pull-to-refresh: scrolling down near top
+      if (scrollTop <= 0 && delta < -5) {
+        console.log("[App] Pull-to-refresh detected, reloading...");
+        loadHome();
+      }
+    };
+
+    const container = appShellRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
+  }, [loadHome]);
+
+  console.log("[App] Rendering, catalog items:", catalog.items.length);
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" ref={appShellRef}>
       <Header />
 
-      <StatusPanel
-        status={status}
-        message={message}
-        connected={connected}
-        eventCount={runtimeEventCount}
-        lastEventName={lastEventName}
-      />
+      {status === "loading" && (
+        <div
+          style={{
+            padding: "12px",
+            textAlign: "center",
+            color: "var(--accent)",
+            fontSize: "12px",
+            fontWeight: "600",
+          }}
+        >
+          ⟳ Đang cập nhật...
+        </div>
+      )}
 
       <SourceSelector
         sources={sources}
@@ -43,33 +78,15 @@ export default function App() {
         onChange={setActiveSource}
       />
 
-      <SearchPanel onSearch={search} />
-
-      <CategoryChips
-        categories={catalog.categories}
-        activeCategory={catalog.activeCategory}
-        onSelect={loadCategory}
-      />
-
-      <section className="panel">
-        <h2>Phase 6 Output</h2>
-        <ul>
-          <li>Home, category and search now run through provider actions</li>
-          <li>Search form and category chips are connected to React state</li>
-          <li>Source selector changes active provider and reloads catalog</li>
-          <li>{Object.keys(COMMAND_MODEL_SHAPES).length} command model definitions</li>
-          <li>{Object.keys(EVENT_MODEL_SHAPES).length} event model definitions</li>
-        </ul>
-      </section>
-
       <CatalogView
         title={catalog.title}
-        subtitle={catalog.error || catalog.subtitle}
+        subtitle={catalog.subtitle}
         items={catalog.items}
         sourceId={catalog.sourceId}
+        pagination={catalog.pagination}
+        onLoadMore={loadMore}
+        isLoading={status === "loading"}
       />
-
-      <DiagnosticPanel diagnostic={diagnostic} />
     </main>
   );
 }

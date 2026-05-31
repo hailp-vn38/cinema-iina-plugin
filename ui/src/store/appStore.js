@@ -8,22 +8,27 @@ const DEFAULT_SOURCES = [
 
 export const useAppStore = create((set) => ({
   sources: DEFAULT_SOURCES,
-  activeSourceId: "ophim",
+  activeSourceId: "mock",
   connected: false,
   status: "booting",
   message: "Khoi tao React shell...",
   lastEventName: "",
   runtimeEventCount: 0,
   catalog: {
-    sourceId: "",
+    sourceId: "mock",
     mode: "home",
-    title: "",
-    subtitle: "",
+    title: "Mock Home (Loading...)",
+    subtitle: "Đợi dữ liệu...",
     items: [],
-    categories: [],
-    activeCategory: "",
+    categories: [{ slug: "mock-home", label: "Mock" }],
+    activeCategory: "mock-home",
     keyword: "",
     error: "",
+    pagination: {
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+    },
   },
   diagnostic: {
     pluginVersion: "",
@@ -72,12 +77,35 @@ export const useAppStore = create((set) => ({
         title: payload && payload.title ? payload.title : "Catalog",
         subtitle: payload && payload.subtitle ? payload.subtitle : "",
         items: payload && Array.isArray(payload.items) ? payload.items : [],
-        categories: payload && Array.isArray(payload.categories) ? payload.categories : [],
-        activeCategory: payload && payload.activeCategory ? payload.activeCategory : "",
+        categories:
+          payload && Array.isArray(payload.categories)
+            ? payload.categories
+            : [],
+        activeCategory:
+          payload && payload.activeCategory ? payload.activeCategory : "",
         keyword: payload && payload.keyword ? payload.keyword : "",
         error: "",
+        pagination:
+          payload && payload.pagination
+            ? payload.pagination
+            : { currentPage: 1, totalPages: 1, totalItems: 0 },
       },
     });
+  },
+  appendCatalogPayload(payload, sourceId) {
+    set((state) => ({
+      status: "ready",
+      message: "Đã tải thêm dữ liệu từ " + sourceId + ".",
+      catalog: Object.assign({}, state.catalog, {
+        items: (state.catalog.items || []).concat(
+          payload && Array.isArray(payload.items) ? payload.items : [],
+        ),
+        pagination:
+          payload && payload.pagination
+            ? payload.pagination
+            : state.catalog.pagination,
+      }),
+    }));
   },
   applyAppState(payload) {
     set((state) => ({
@@ -94,11 +122,14 @@ export const useAppStore = create((set) => ({
       lastEventName: "app_diagnostic",
       runtimeEventCount: state.runtimeEventCount + 1,
       diagnostic: {
-        pluginVersion: payload && payload.pluginVersion ? payload.pluginVersion : "",
+        pluginVersion:
+          payload && payload.pluginVersion ? payload.pluginVersion : "",
         sidebarLoaded: Boolean(payload && payload.sidebarLoaded),
         windowLoaded: Boolean(payload && payload.windowLoaded),
-        lastUiMessage: payload && payload.lastUiMessage ? payload.lastUiMessage : "",
-        lastAppMessage: payload && payload.lastAppMessage ? payload.lastAppMessage : "",
+        lastUiMessage:
+          payload && payload.lastUiMessage ? payload.lastUiMessage : "",
+        lastAppMessage:
+          payload && payload.lastAppMessage ? payload.lastAppMessage : "",
         lastError: payload && payload.lastError ? payload.lastError : "",
       },
     }));

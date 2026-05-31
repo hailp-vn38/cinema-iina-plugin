@@ -16,24 +16,46 @@
 html,
 body,
 #root {
-  min-height: 100%;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
+  padding: 0;
   font-family: "Avenir Next", "Segoe UI", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(139, 60, 29, 0.18), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.2)),
+    radial-gradient(
+      circle at top left,
+      rgba(139, 60, 29, 0.18),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.65),
+      rgba(255, 255, 255, 0.2)
+    ),
     var(--bg);
 }
 
 .app-shell {
-  min-height: 100vh;
-  padding: 12px;
-  display: grid;
-  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: 100%;
+  overscroll-behavior: contain;
+}
+
+.app-shell > * {
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .hero-card,
@@ -46,10 +68,16 @@ body {
 
 .hero-card {
   padding: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin: 12px 12px 0 12px;
 }
 
 .panel {
   padding: 12px;
+  margin: 0 12px 12px 12px;
+  overscroll-behavior: contain;
 }
 
 .panel-note {

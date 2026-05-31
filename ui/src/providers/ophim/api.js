@@ -19,13 +19,20 @@ export const ophimApi = {
   getHome() {
     return fetchJson(OPHIM_API_BASE + "/home");
   },
-  getCategory(slug) {
+  getCategory(slug, page = 1) {
     return fetchJson(
-      OPHIM_API_BASE + "/danh-sach/" + encodeURIComponent(slug) + "?page=1&limit=24"
+      OPHIM_API_BASE +
+        "/danh-sach/" +
+        encodeURIComponent(slug) +
+        "?page=" +
+        page +
+        "&limit=24",
     );
   },
   search(keyword) {
-    return fetchJson(OPHIM_API_BASE + "/tim-kiem?keyword=" + encodeURIComponent(keyword));
+    return fetchJson(
+      OPHIM_API_BASE + "/tim-kiem?keyword=" + encodeURIComponent(keyword),
+    );
   },
   getDetail(slug) {
     return fetchJson(OPHIM_API_BASE + "/phim/" + encodeURIComponent(slug));

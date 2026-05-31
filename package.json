@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.mjs",
-    "build:ui": "node scripts/build-ui.mjs",
+    "build:ui": "node scripts/build-ui-inline.mjs",
     "build:runtime": "node scripts/build-runtime.mjs",
     "package": "npm run build:ui && npm run build:runtime && node scripts/package-plugin.mjs"
   },
