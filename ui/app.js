@@ -142,12 +142,37 @@ function renderDetail(detail) {
       escapeHtml(detail.title.slice(0, 1)) +
       "</div>";
 
+  const servers = Array.isArray(detail.servers) ? detail.servers : [];
+  const activeServerIndex =
+    typeof detail.activeServerIndex === "number" ? detail.activeServerIndex : 0;
+  const activeServer = servers[activeServerIndex] || null;
+  const activeEntries = Array.isArray(detail.entries)
+    ? detail.entries
+    : activeServer && Array.isArray(activeServer.entries)
+      ? activeServer.entries
+      : [];
+
   const meta = [detail.year, detail.quality, detail.lang, detail.time]
     .filter(Boolean)
     .map((part) => '<span class="detail-meta-pill">' + escapeHtml(part) + "</span>")
     .join("");
 
-  const episodes = (detail.entries || [])
+  const serverButtons = servers
+    .map((server, index) => {
+      const isActive = index === activeServerIndex;
+      return (
+        '<button class="' +
+        (isActive ? "chip is-active" : "chip") +
+        '" type="button" data-server-index="' +
+        String(index) +
+        '">' +
+        escapeHtml(server.name) +
+        "</button>"
+      );
+    })
+    .join("");
+
+  const episodes = activeEntries
     .map((entry, index) => {
       const isCurrent =
         state.playback.active &&
@@ -191,7 +216,7 @@ function renderDetail(detail) {
     '<p class="detail-origin">' + escapeHtml(detail.originName) + "</p>" +
     '<div class="detail-meta">' + meta + "</div>" +
     '<p class="detail-server">Server: ' +
-    escapeHtml(detail.serverName || "Mac dinh") +
+    escapeHtml((activeServer && activeServer.name) || detail.serverName || "Mac dinh") +
     "</p>" +
     playingNow +
     '<p class="detail-summary">' +
@@ -199,11 +224,19 @@ function renderDetail(detail) {
     "</p>" +
     "</div>" +
     "</div>" +
+    '<div class="server-section">' +
+    '<div class="episode-section-header">' +
+    '<h4 class="episode-section-title">Server</h4>' +
+    "</div>" +
+    '<div class="chip-row">' +
+    serverButtons +
+    "</div>" +
+    "</div>" +
     '<div class="episode-section">' +
     '<div class="episode-section-header">' +
     '<h4 class="episode-section-title">Danh sach tap</h4>' +
     '<span class="episode-section-count">' +
-    String((detail.entries || []).length) +
+    String(activeEntries.length) +
     " tap</span>" +
     "</div>" +
     '<div class="episode-grid">' +
@@ -394,6 +427,23 @@ resultsList.addEventListener("click", (event) => {
       },
       "Đang mở tập..."
     );
+    return;
+  }
+
+  const serverButton = event.target.closest("[data-server-index]");
+  if (serverButton && state.detail) {
+    const index = Number(serverButton.getAttribute("data-server-index") || "0");
+    const servers = Array.isArray(state.detail.servers) ? state.detail.servers : [];
+    const server = servers[index] || null;
+    if (!server) {
+      return;
+    }
+
+    state.detail.activeServerIndex = index;
+    state.detail.serverName = server.name;
+    state.detail.entries = Array.isArray(server.entries) ? server.entries : [];
+    state.message = "Đã chọn server: " + server.name;
+    render();
   }
 });
 

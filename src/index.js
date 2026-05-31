@@ -17,7 +17,7 @@ let lastDetailPayload = null;
 let lastErrorPayload = null;
 let lastPlaybackPayload = null;
 let lastDiagnosticPayload = {
-  pluginVersion: "0.1.17",
+  pluginVersion: "0.1.18",
   sidebarLoaded: false,
   windowLoaded: false,
   lastUiMessage: "",
@@ -257,6 +257,19 @@ function buildPlayEntries(serverData) {
     }));
 }
 
+function normalizeServers(episodes) {
+  return (episodes || [])
+    .map((server, index) => {
+      const entries = buildPlayEntries(server && server.server_data ? server.server_data : []);
+      return {
+        index: index,
+        name: server && server.server_name ? String(server.server_name) : "Server " + (index + 1),
+        entries: entries,
+      };
+    })
+    .filter((server) => server.entries.length > 0);
+}
+
 async function fetchMovieDetail(slug) {
   const payload = await fetchJson(API_BASE_URL + "/phim/" + encodeURIComponent(slug));
   return payload && payload.data && payload.data.item ? payload.data.item : null;
@@ -264,8 +277,18 @@ async function fetchMovieDetail(slug) {
 
 function normalizeDetail(slug, item) {
   const posterBase = "https://img.ophim.live";
-  const server = pickServer(item && item.episodes ? item.episodes : []);
-  const entries = buildPlayEntries(server && server.server_data ? server.server_data : []);
+  const servers = normalizeServers(item && item.episodes ? item.episodes : []);
+  const preferredServerName = pickServer(item && item.episodes ? item.episodes : []);
+  const preferredName =
+    preferredServerName && preferredServerName.server_name
+      ? String(preferredServerName.server_name)
+      : "";
+  const activeServerIndex = Math.max(
+    0,
+    servers.findIndex((server) => server.name === preferredName)
+  );
+  const activeServer = servers[activeServerIndex] || null;
+  const entries = activeServer ? activeServer.entries : [];
 
   return {
     slug: String(slug || ""),
@@ -281,7 +304,9 @@ function normalizeDetail(slug, item) {
     year: item && item.year ? String(item.year) : "",
     time: item && item.time ? String(item.time) : "",
     episodeCurrent: item && item.episode_current ? String(item.episode_current) : "",
-    serverName: server && server.server_name ? String(server.server_name) : "",
+    serverName: activeServer ? activeServer.name : "",
+    activeServerIndex: activeServerIndex,
+    servers: servers,
     entries: entries,
   };
 }

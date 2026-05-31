@@ -292,6 +292,11 @@ input {
   gap: 8px;
 }
 
+.server-section {
+  display: grid;
+  gap: 8px;
+}
+
 .episode-section-header {
   display: flex;
   align-items: center;
