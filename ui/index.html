@@ -1,55 +1,12 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OPhim Browser</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <title>Cinema Sources</title>
   </head>
   <body>
-    <div class="app-shell">
-      <header class="hero">
-        <p class="eyebrow">OPhim</p>
-        <h1>OPhim Browser</h1>
-        <p id="catalog-subtitle" class="subtitle">Đang chuẩn bị dữ liệu...</p>
-      </header>
-
-      <section class="panel">
-        <form id="search-form" class="search-form">
-          <input
-            id="search-input"
-            class="search-input"
-            type="search"
-            placeholder="Tìm tên phim"
-            autocomplete="off"
-          />
-          <button class="primary-button" type="submit">Tìm</button>
-        </form>
-        <div id="category-list" class="chip-row"></div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header">
-          <h2 id="catalog-title">Đang tải</h2>
-          <span id="status-badge" class="badge">Idle</span>
-        </div>
-        <p id="status-text" class="status-text">Đang chờ plugin tải dữ liệu.</p>
-      </section>
-
-      <section class="panel">
-        <p id="error-banner" class="error-banner is-hidden"></p>
-        <div id="results-list" class="results-list"></div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header">
-          <h2>Diagnostic</h2>
-          <button id="diagnostic-ping" class="ghost-button" type="button">Ping runtime</button>
-        </div>
-        <div id="diagnostic-output" class="diagnostic-output"></div>
-      </section>
-    </div>
-
-    <script src="./app.js"></script>
+    <div id="root"></div>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>

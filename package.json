@@ -1,0 +1,22 @@
+{
+  "name": "iina-plugin-next",
+  "private": true,
+  "version": "0.2.0-dev.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.mjs",
+    "build:ui": "node scripts/build-ui.mjs",
+    "build:runtime": "node scripts/build-runtime.mjs",
+    "package": "npm run build:ui && npm run build:runtime && node scripts/package-plugin.mjs"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zustand": "5.0.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.4",
+    "esbuild": "0.25.5",
+    "vite": "5.4.10"
+  }
+}
