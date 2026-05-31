@@ -2,8 +2,7 @@ import { create } from "zustand";
 
 const DEFAULT_SOURCES = [
   { id: "ophim", label: "OPhim", enabled: true },
-  { id: "kkphim", label: "KKPhim", enabled: false },
-  { id: "mock", label: "Mock", enabled: true },
+  { id: "kkphim", label: "KKPhim", enabled: true },
 ];
 export const HISTORY_CATEGORY_SLUG = "__history__";
 

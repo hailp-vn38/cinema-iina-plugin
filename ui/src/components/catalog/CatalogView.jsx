@@ -83,6 +83,7 @@ export function CatalogView({
   title,
   subtitle,
   items,
+  sourceId,
   pagination,
   onLoadMore,
   onOpenDetail,
@@ -92,7 +93,6 @@ export function CatalogView({
   onClearHistory,
 }) {
   const panelRef = useRef(null);
-  const sentinelRef = useRef(null);
   const isHistoryMode = mode === "history";
   const hasMore =
     !isHistoryMode &&
@@ -101,28 +101,23 @@ export function CatalogView({
     pagination.totalPages &&
     pagination.currentPage < pagination.totalPages;
 
+  function triggerLoadMore() {
+    if (!hasMore || isLoading) {
+      return;
+    }
+    onLoadMore();
+  }
+
   useEffect(() => {
-    if (!hasMore || !sentinelRef.current || !panelRef.current || isLoading) {
-      return undefined;
+    if (!panelRef.current) {
+      return;
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            onLoadMore();
-          }
-        });
-      },
-      {
-        root: panelRef.current,
-        threshold: 0.1,
-      },
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, isLoading, onLoadMore]);
+    panelRef.current.scrollTo({
+      top: 0,
+      behavior: "auto",
+    });
+  }, [sourceId]);
 
   if (!items || items.length === 0) {
     return (
@@ -191,7 +186,21 @@ export function CatalogView({
               <div className="catalog-card-headline">
                 <h3>{item.name}</h3>
                 {isHistoryMode ? (
-                  <HistoryCardMenu onRemove={() => onRemoveHistory(item.id)} />
+                  <div
+                    className="catalog-card-headline-actions"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <button
+                      className="catalog-card-icon-button"
+                      type="button"
+                      aria-label="Play playlist"
+                      title="Play playlist"
+                      onClick={() => onRestoreHistory(item)}
+                    >
+                      ▶
+                    </button>
+                    <HistoryCardMenu onRemove={() => onRemoveHistory(item.id)} />
+                  </div>
                 ) : null}
               </div>
               <p className="catalog-origin">
@@ -221,34 +230,42 @@ export function CatalogView({
                   Xem gần nhất: {formatUpdatedAt(item.updatedAt)}
                 </p>
               ) : null}
-              {isHistoryMode ? (
-                <div
-                  className="catalog-card-actions"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <button
-                    className="primary-button ghost-button--small"
-                    type="button"
-                    onClick={() => onRestoreHistory(item)}
-                  >
-                    Play
-                  </button>
-                </div>
-              ) : null}
             </div>
           </article>
         ))}
       </div>
 
       {hasMore && (
-        <div
-          className={
-            isLoading ? "catalog-sentinel is-loading" : "catalog-sentinel"
-          }
-        >
-          <div ref={sentinelRef} className="catalog-sentinel-target" />
-          {isLoading ? <span>Đang tải...</span> : null}
-        </div>
+        <>
+          <div
+            className={
+              isLoading ? "catalog-sentinel is-loading" : "catalog-sentinel"
+            }
+          >
+            {isLoading ? (
+              <div className="catalog-sentinel-loader" aria-live="polite">
+                <div className="catalog-sentinel-dots" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <span className="catalog-sentinel-text">
+                  Đang tải thêm phim...
+                </span>
+              </div>
+            ) : null}
+          </div>
+          <div className="catalog-load-more">
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={triggerLoadMore}
+              disabled={isLoading}
+            >
+              {isLoading ? "Đang tải..." : "Tải thêm"}
+            </button>
+          </div>
+        </>
       )}
     </section>
   );
