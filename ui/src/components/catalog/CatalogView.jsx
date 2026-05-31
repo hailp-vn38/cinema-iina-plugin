@@ -103,7 +103,11 @@ export function CatalogView({
       </div>
 
       {hasMore && (
-        <div className={isLoading ? "catalog-sentinel is-loading" : "catalog-sentinel"}>
+        <div
+          className={
+            isLoading ? "catalog-sentinel is-loading" : "catalog-sentinel"
+          }
+        >
           <div ref={sentinelRef} className="catalog-sentinel-target" />
           {isLoading ? <span>Đang tải...</span> : null}
         </div>
