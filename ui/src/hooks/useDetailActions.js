@@ -29,9 +29,12 @@ export function useDetailActions() {
   const recordOutboundCommand = useAppStore(
     (state) => state.recordOutboundCommand,
   );
+  const rememberHistoryEntry = useAppStore(
+    (state) => state.rememberHistoryEntry,
+  );
 
   const openDetail = useCallback(
-    async (slug) => {
+    async (slug, options = {}) => {
       if (!provider || !provider.getDetail) {
         setDetailError("Source này chưa hỗ trợ detail.");
         return;
@@ -40,7 +43,37 @@ export function useDetailActions() {
       setDetailLoading("Đang lấy thông tin phim...");
       try {
         const payload = await provider.getDetail(slug);
-        applyDetailPayload(payload);
+        const historyEntry =
+          options && options.historyEntry
+            ? options.historyEntry
+            : options && options.entries
+              ? options
+              : null;
+        let nextPayload = payload;
+
+        if (historyEntry) {
+          const servers = Array.isArray(payload.servers) ? payload.servers : [];
+          const matchedServerIndex = servers.findIndex(
+            (server) =>
+              server &&
+              ((historyEntry.serverId && server.id === historyEntry.serverId) ||
+                (historyEntry.serverName && server.name === historyEntry.serverName)),
+          );
+          const activeServerIndex = matchedServerIndex >= 0 ? matchedServerIndex : payload.activeServerIndex || 0;
+          const activeServer = servers[activeServerIndex] || null;
+          nextPayload = Object.assign({}, payload, {
+            activeServerIndex,
+            serverName: activeServer ? activeServer.name : payload.serverName,
+            entries: activeServer && Array.isArray(activeServer.entries) ? activeServer.entries : payload.entries,
+            historyEpisodeIndex:
+              typeof historyEntry.episodeIndex === "number"
+                ? historyEntry.episodeIndex
+                : -1,
+            historyEpisodeName: historyEntry.episodeName || "",
+            historyServerId: historyEntry.serverId || "",
+          });
+        }
+        applyDetailPayload(nextPayload);
       } catch (error) {
         setDetailError(
           error && error.message ? error.message : "Unknown provider error",
@@ -63,6 +96,19 @@ export function useDetailActions() {
           mode: "single",
           episodeIndex,
         });
+        rememberHistoryEntry({
+          sourceId: detail.sourceId,
+          movieId: detail.movieId,
+          detailSlug: detail.slug,
+          title: detail.title,
+          originName: detail.originName,
+          posterUrl: detail.posterUrl,
+          serverId: payload.serverId,
+          serverName: detail.serverName,
+          entries: payload.entries,
+          episodeIndex,
+          episodeName: payload.episodeName,
+        });
         setPendingPlayRequest(requestId);
         recordOutboundCommand(UI_COMMANDS.PLAY_EPISODE);
         setStatus("loading", "Đang mở tập...");
@@ -83,6 +129,7 @@ export function useDetailActions() {
       detail,
       provider,
       recordOutboundCommand,
+      rememberHistoryEntry,
       setPendingPlayRequest,
       setStatus,
     ],
@@ -101,6 +148,24 @@ export function useDetailActions() {
           mode: "all",
           startEpisodeIndex,
         });
+        rememberHistoryEntry({
+          sourceId: detail.sourceId,
+          movieId: detail.movieId,
+          detailSlug: detail.slug,
+          title: detail.title,
+          originName: detail.originName,
+          posterUrl: detail.posterUrl,
+          serverId: payload.serverId,
+          serverName: detail.serverName,
+          entries: payload.entries,
+          startEpisodeIndex,
+          episodeIndex: startEpisodeIndex,
+          episodeName:
+            payload.entries[startEpisodeIndex] &&
+            payload.entries[startEpisodeIndex].name
+              ? payload.entries[startEpisodeIndex].name
+              : "",
+        });
         setPendingPlayRequest(requestId);
         recordOutboundCommand(UI_COMMANDS.PLAY_ALL);
         setStatus("loading", "Đang thêm playlist...");
@@ -117,7 +182,14 @@ export function useDetailActions() {
         );
       }
     },
-    [detail, provider, recordOutboundCommand, setPendingPlayRequest, setStatus],
+    [
+      detail,
+      provider,
+      recordOutboundCommand,
+      rememberHistoryEntry,
+      setPendingPlayRequest,
+      setStatus,
+    ],
   );
 
   return {

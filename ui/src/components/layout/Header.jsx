@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Dropdown } from "../common/Dropdown.jsx";
+import { HISTORY_CATEGORY_SLUG } from "../../store/appStore.js";
 
 export function Header({
   sources,
@@ -32,6 +33,10 @@ export function Header({
     categories = [];
   }
 
+  const categoryItems = [
+    { slug: HISTORY_CATEGORY_SLUG, label: "Lịch sử" },
+  ].concat(categories);
+
   return (
     <header className="header">
       {/* Row 1: Search + Provider Dropdown */}
@@ -49,19 +54,21 @@ export function Header({
           </button>
         </form>
 
-        <Dropdown
-          options={sourceOptions}
-          activeValue={activeSourceId}
-          onChange={onSourceChange}
-          label="Provider"
-        />
+        <div className="header-actions">
+          <Dropdown
+            options={sourceOptions}
+            activeValue={activeSourceId}
+            onChange={onSourceChange}
+            label="Provider"
+          />
+        </div>
       </div>
 
       {/* Row 2: Category Tabs */}
       {categories.length > 0 && (
         <div className="header-row-2">
           <div className="category-tabs">
-            {categories.map((category) => (
+            {categoryItems.map((category) => (
               <button
                 key={category.slug}
                 type="button"

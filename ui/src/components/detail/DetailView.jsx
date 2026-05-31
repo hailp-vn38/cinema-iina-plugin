@@ -35,6 +35,11 @@ export function DetailView({
     playback.active &&
     playback.detailSlug &&
     playback.detailSlug === detail.slug;
+  const lastKnownEpisodeIndex =
+    typeof detail.historyEpisodeIndex === "number"
+      ? detail.historyEpisodeIndex
+      : -1;
+  const lastKnownEpisodeName = detail.historyEpisodeName || "";
 
   return (
     <section className="panel">
@@ -72,14 +77,21 @@ export function DetailView({
               Server: {(activeServer && activeServer.name) || detail.serverName || "Mặc định"}
             </p>
 
-            {isCurrentDetail && (
+            {isCurrentDetail ? (
               <p className="detail-now-playing">
                 Đang xem:{" "}
                 {playback.episodeName
                   ? detail.title + " - " + playback.episodeName
                   : playback.title || detail.title}
               </p>
-            )}
+            ) : lastKnownEpisodeIndex >= 0 ? (
+              <p className="detail-now-playing">
+                Lần cuối:{" "}
+                {lastKnownEpisodeName
+                  ? detail.title + " - " + lastKnownEpisodeName
+                  : detail.title + " - Tập " + (lastKnownEpisodeIndex + 1)}
+              </p>
+            ) : null}
 
             <p className="detail-summary">
               {detail.content || detail.episodeCurrent || "Không có mô tả."}
@@ -117,11 +129,15 @@ export function DetailView({
             {activeEntries.map((entry, index) => {
               const isCurrent =
                 isCurrentDetail && playback.episodeIndex === index;
+              const isHistoryCurrent =
+                !isCurrentDetail && lastKnownEpisodeIndex === index;
               return (
                 <button
                   key={entry.slug || entry.name || index}
                   className={
-                    isCurrent ? "episode-button is-current" : "episode-button"
+                    isCurrent || isHistoryCurrent
+                      ? "episode-button is-current"
+                      : "episode-button"
                   }
                   type="button"
                   onClick={() => onPlayEpisode(index)}

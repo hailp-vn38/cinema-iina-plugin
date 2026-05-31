@@ -3,6 +3,7 @@ import { createBaseProvider } from "../baseProvider.js";
 export const mockProvider = createBaseProvider({
   id: "mock",
   label: "Mock",
+  categories: [{ slug: "mock-home", label: "Mock" }],
   supports: {
     home: true,
     search: true,

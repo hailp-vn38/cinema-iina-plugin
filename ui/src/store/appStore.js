@@ -5,16 +5,17 @@ const DEFAULT_SOURCES = [
   { id: "kkphim", label: "KKPhim", enabled: false },
   { id: "mock", label: "Mock", enabled: true },
 ];
+export const HISTORY_CATEGORY_SLUG = "__history__";
 
 function createInitialCatalog(sourceId = "ophim") {
   return {
     sourceId,
-    mode: "home",
-    title: "Trang chủ",
-    subtitle: "Đợi dữ liệu...",
+    mode: "history",
+    title: "Lịch sử xem",
+    subtitle: "Các playlist gần đây",
     items: [],
     categories: [],
-    activeCategory: "",
+    activeCategory: HISTORY_CATEGORY_SLUG,
     keyword: "",
     error: "",
     pagination: {
@@ -47,6 +48,14 @@ function createInitialPlayback() {
   };
 }
 
+function toHistoryEntryId(payload) {
+  return [
+    payload && payload.sourceId ? payload.sourceId : "",
+    payload && payload.detailSlug ? payload.detailSlug : "",
+    payload && payload.serverId ? payload.serverId : "",
+  ].join(":");
+}
+
 export const useAppStore = create((set) => ({
   sources: DEFAULT_SOURCES,
   activeSourceId: "ophim",
@@ -59,6 +68,7 @@ export const useAppStore = create((set) => ({
   catalog: createInitialCatalog("ophim"),
   detail: createInitialDetail(),
   playback: createInitialPlayback(),
+  history: [],
   diagnostic: {
     pluginVersion: "",
     sidebarLoaded: false,
@@ -78,7 +88,7 @@ export const useAppStore = create((set) => ({
       activeSourceId: sourceId,
       view: "catalog",
       status: "loading",
-      message: "Đang đổi nguồn...",
+      message: "Đang mở lịch sử...",
       catalog: createInitialCatalog(sourceId),
       detail: createInitialDetail(),
       playback: Object.assign({}, createInitialPlayback()),
@@ -88,6 +98,95 @@ export const useAppStore = create((set) => ({
     set({
       status,
       message: message || "",
+    });
+  },
+  hydrateHistory(entries) {
+    set((state) => ({
+      history: Array.isArray(entries) ? entries.slice(0, 12) : [],
+      catalog:
+        state.catalog.activeCategory === HISTORY_CATEGORY_SLUG
+          ? Object.assign({}, state.catalog, {
+              mode: "history",
+              title: "Lịch sử xem",
+              subtitle: "Các playlist gần đây",
+            })
+          : state.catalog,
+    }));
+  },
+  rememberHistoryEntry(payload) {
+    set((state) => {
+      const entry = {
+        id: toHistoryEntryId(payload),
+        sourceId: payload && payload.sourceId ? String(payload.sourceId) : "",
+        movieId: payload && payload.movieId ? String(payload.movieId) : "",
+        detailSlug:
+          payload && payload.detailSlug ? String(payload.detailSlug) : "",
+        title: payload && payload.title ? String(payload.title) : "Movie",
+        originName:
+          payload && payload.originName ? String(payload.originName) : "",
+        posterUrl: payload && payload.posterUrl ? String(payload.posterUrl) : "",
+        serverId: payload && payload.serverId ? String(payload.serverId) : "",
+        serverName:
+          payload && payload.serverName ? String(payload.serverName) : "",
+        entries:
+          payload && Array.isArray(payload.entries)
+            ? payload.entries.map((item) => ({
+                name: item && item.name ? String(item.name) : "",
+                slug: item && item.slug ? String(item.slug) : "",
+                url: item && item.url ? String(item.url) : "",
+              }))
+            : [],
+        episodeIndex:
+          payload && typeof payload.episodeIndex === "number"
+            ? payload.episodeIndex
+            : payload && typeof payload.startEpisodeIndex === "number"
+              ? payload.startEpisodeIndex
+              : 0,
+        episodeName:
+          payload && payload.episodeName ? String(payload.episodeName) : "",
+        updatedAt: new Date().toISOString(),
+      };
+
+      const nextHistory = [entry]
+        .concat((state.history || []).filter((item) => item.id !== entry.id))
+        .slice(0, 12);
+
+      return {
+        history: nextHistory,
+      };
+    });
+  },
+  removeHistoryEntry(entryId) {
+    set((state) => ({
+      history: (state.history || []).filter((item) => item.id !== entryId),
+    }));
+  },
+  clearHistory() {
+    set({
+      history: [],
+    });
+  },
+  showHistoryCatalog() {
+    set({
+      view: "catalog",
+      status: "ready",
+      message: "Đang xem lịch sử.",
+      catalog: {
+        sourceId: "",
+        mode: "history",
+        title: "Lịch sử xem",
+        subtitle: "Các playlist gần đây",
+        items: [],
+        categories: [],
+        activeCategory: HISTORY_CATEGORY_SLUG,
+        keyword: "",
+        error: "",
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 0,
+        },
+      },
     });
   },
   setCatalogLoading(message) {
@@ -268,6 +367,28 @@ export const useAppStore = create((set) => ({
         serverId: payload && payload.serverId ? String(payload.serverId) : "",
         url: payload && payload.url ? String(payload.url) : "",
       },
+      history: (state.history || []).map((item) => {
+        const isSamePlayback =
+          item.detailSlug &&
+          payload &&
+          item.detailSlug === String(payload.detailSlug || "") &&
+          item.serverId === String(payload.serverId || "");
+        if (!isSamePlayback) {
+          return item;
+        }
+
+        return Object.assign({}, item, {
+          episodeIndex:
+            payload && typeof payload.episodeIndex === "number"
+              ? payload.episodeIndex
+              : item.episodeIndex,
+          episodeName:
+            payload && payload.episodeName
+              ? String(payload.episodeName)
+              : item.episodeName,
+          updatedAt: new Date().toISOString(),
+        });
+      }),
       lastEventName: "app_playback_state",
       runtimeEventCount: state.runtimeEventCount + 1,
     }));

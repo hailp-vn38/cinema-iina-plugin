@@ -30,24 +30,35 @@ export function createPlaybackService({
     mpv.set("force-media-title", parts.join(" - "));
   }
 
-  function loadEntries({ payload, entries, startIndex, appendRest }) {
+  function loadEntries({
+    payload,
+    entries,
+    startIndex,
+    appendRest,
+    preservePlaylistOrder = false,
+  }) {
     const safeStartIndex =
       typeof startIndex === "number" && startIndex >= 0 && startIndex < entries.length
         ? startIndex
         : 0;
-    const firstEntry = entries[safeStartIndex];
-    const mapping = [safeStartIndex];
+    const firstEntry = preservePlaylistOrder ? entries[0] : entries[safeStartIndex];
+    const mapping = preservePlaylistOrder ? [0] : [safeStartIndex];
 
     setMediaTitle(payload.title || "", firstEntry.name || "");
     mpv.command("loadfile", [firstEntry.url, "replace"]);
 
     if (appendRest) {
       for (let index = 0; index < entries.length; index += 1) {
-        if (index === safeStartIndex) {
+        if (index === (preservePlaylistOrder ? 0 : safeStartIndex)) {
           continue;
         }
         mpv.command("loadfile", [entries[index].url, "append"]);
         mapping.push(index);
+      }
+
+      if (preservePlaylistOrder && safeStartIndex > 0) {
+        mpv.command("playlist-play-index", [String(safeStartIndex)]);
+        setMediaTitle(payload.title || "", entries[safeStartIndex].name || "");
       }
     }
 
@@ -90,6 +101,7 @@ export function createPlaybackService({
         entries,
         startIndex: episodeIndex,
         appendRest: false,
+        preservePlaylistOrder: false,
       });
       diagnosticService.recordPlayStage("after-loadfile-single", {
         requestId: payload.requestId,
@@ -124,6 +136,7 @@ export function createPlaybackService({
         entries,
         startIndex: startEpisodeIndex,
         appendRest: true,
+        preservePlaylistOrder: Boolean(payload.preservePlaylistOrder),
       });
       diagnosticService.recordPlayStage("after-loadfile-playlist", {
         requestId: payload.requestId,

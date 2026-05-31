@@ -6,10 +6,12 @@ import {
   mapHomePayload,
   mapSearchPayload,
 } from "./mapper.js";
+import { OPHIM_CATEGORIES } from "./constants.js";
 
 export const ophimProvider = createBaseProvider({
   id: "ophim",
   label: "OPhim",
+  categories: OPHIM_CATEGORIES,
   supports: {
     home: true,
     search: true,

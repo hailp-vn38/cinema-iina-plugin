@@ -2,6 +2,9 @@ export function createBaseProvider(definition) {
   return {
     id: definition.id,
     label: definition.label,
+    categories: Array.isArray(definition.categories)
+      ? definition.categories.slice()
+      : [],
     supports: Object.assign(
       {
         home: false,

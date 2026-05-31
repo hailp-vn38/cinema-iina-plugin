@@ -3,15 +3,19 @@ import { useAppStore } from "./store/appStore.js";
 import { useRuntimeBridge } from "./hooks/useRuntimeBridge.js";
 import { useCatalogActions } from "./hooks/useCatalogActions.js";
 import { useDetailActions } from "./hooks/useDetailActions.js";
+import { useHistoryActions } from "./hooks/useHistoryActions.js";
+import { useHistoryPersistence } from "./hooks/useHistoryPersistence.js";
+import { useSourceProvider } from "./hooks/useSourceProvider.js";
 import { Header } from "./components/layout/Header.jsx";
 import { CatalogView } from "./components/catalog/CatalogView.jsx";
 import { DetailView } from "./components/detail/DetailView.jsx";
-import { DiagnosticPanel } from "./components/diagnostic/DiagnosticPanel.jsx";
 
 export default function App() {
   useRuntimeBridge();
+  useHistoryPersistence();
 
   const sources = useAppStore((state) => state.sources);
+  const history = useAppStore((state) => state.history);
   const activeSourceId = useAppStore((state) => state.activeSourceId);
   const setActiveSource = useAppStore((state) => state.setActiveSource);
   const status = useAppStore((state) => state.status);
@@ -20,13 +24,13 @@ export default function App() {
   const catalog = useAppStore((state) => state.catalog);
   const detail = useAppStore((state) => state.detail.data);
   const playback = useAppStore((state) => state.playback);
-  const diagnostic = useAppStore((state) => state.diagnostic);
-  const lastEventName = useAppStore((state) => state.lastEventName);
-  const runtimeEventCount = useAppStore((state) => state.runtimeEventCount);
+  const provider = useSourceProvider();
 
   const { loadHome, loadMore, loadCategory, search } = useCatalogActions();
   const { openDetail, closeDetail, selectServer, playEpisode, playAll } =
     useDetailActions();
+  const { restoreHistoryEntry, removeHistory, clearHistory } =
+    useHistoryActions();
 
   const appShellRef = useRef(null);
   const lastScrollRef = useRef(0);
@@ -34,6 +38,32 @@ export default function App() {
   useEffect(() => {
     loadHome();
   }, [activeSourceId, loadHome]);
+
+  const catalogItems =
+    catalog.mode === "history"
+      ? history.map((item) => ({
+          id: item.id,
+          sourceId: item.sourceId,
+          sourceLabel: item.sourceId ? item.sourceId.toUpperCase() : "",
+          slug: item.detailSlug,
+          name: item.title,
+          originName: item.originName,
+          posterUrl: item.posterUrl,
+          serverId: item.serverId,
+          serverName: item.serverName,
+          updatedAt: item.updatedAt,
+          updatedAtLabel: "Đã lưu",
+          episodeIndex: item.episodeIndex,
+          episodeName: item.episodeName,
+          entries: item.entries,
+        }))
+      : catalog.items;
+  const headerCategories =
+    catalog.categories && catalog.categories.length
+      ? catalog.categories
+      : provider && Array.isArray(provider.categories)
+        ? provider.categories
+        : [];
 
   useEffect(() => {
     const container = appShellRef.current;
@@ -67,7 +97,7 @@ export default function App() {
         onSourceChange={setActiveSource}
         keyword={catalog.keyword}
         onSearch={search}
-        categories={catalog.categories}
+        categories={headerCategories}
         activeCategory={catalog.activeCategory}
         onCategorySelect={loadCategory}
       />
@@ -78,47 +108,29 @@ export default function App() {
         )}
 
         {view === "detail" && detail ? (
-          <>
-            <DetailView
-              detail={detail}
-              playback={playback}
-              onBack={closeDetail}
-              onSelectServer={selectServer}
-              onPlayEpisode={playEpisode}
-              onPlayAll={playAll}
-            />
-            <DiagnosticPanel
-              diagnostic={diagnostic}
-              status={status}
-              message={message}
-              view={view}
-              lastEventName={lastEventName}
-              runtimeEventCount={runtimeEventCount}
-              playback={playback}
-            />
-          </>
+          <DetailView
+            detail={detail}
+            playback={playback}
+            onBack={closeDetail}
+            onSelectServer={selectServer}
+            onPlayEpisode={playEpisode}
+            onPlayAll={playAll}
+          />
         ) : (
-          <>
-            <CatalogView
-              title={catalog.title}
-              subtitle={catalog.subtitle}
-              items={catalog.items}
-              sourceId={catalog.sourceId}
-              pagination={catalog.pagination}
-              onLoadMore={loadMore}
-              onOpenDetail={openDetail}
-              isLoading={status === "loading"}
-            />
-            <DiagnosticPanel
-              diagnostic={diagnostic}
-              status={status}
-              message={message}
-              view={view}
-              lastEventName={lastEventName}
-              runtimeEventCount={runtimeEventCount}
-              playback={playback}
-            />
-          </>
+          <CatalogView
+            mode={catalog.mode}
+            title={catalog.title}
+            subtitle={catalog.subtitle}
+            items={catalogItems}
+            sourceId={catalog.sourceId}
+            pagination={catalog.pagination}
+            onLoadMore={loadMore}
+            onOpenDetail={openDetail}
+            isLoading={status === "loading"}
+            onRestoreHistory={restoreHistoryEntry}
+            onRemoveHistory={removeHistory}
+            onClearHistory={clearHistory}
+          />
         )}
       </section>
     </main>

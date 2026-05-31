@@ -18,6 +18,7 @@ export const COMMAND_MODEL_SHAPES = {
     title: "string",
     serverId: "string",
     startEpisodeIndex: "number",
+    preservePlaylistOrder: "boolean?",
     entries: "array",
   },
   requestDiagnostic: {

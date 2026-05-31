@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function Poster({ item }) {
   if (item.posterUrl) {
@@ -14,16 +14,88 @@ function Poster({ item }) {
   );
 }
 
+function HistoryCardMenu({ onRemove }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div
+      className="catalog-card-menu"
+      ref={menuRef}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <button
+        className="catalog-card-menu-trigger"
+        type="button"
+        onClick={() => setIsOpen((value) => !value)}
+      >
+        ⋯
+      </button>
+      {isOpen && (
+        <div className="catalog-card-menu-popover">
+          <button
+            className="catalog-card-menu-item"
+            type="button"
+            onClick={() => {
+              onRemove();
+              setIsOpen(false);
+            }}
+          >
+            Xóa khỏi lịch sử
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function formatUpdatedAt(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
 export function CatalogView({
+  mode,
+  title,
+  subtitle,
   items,
   pagination,
   onLoadMore,
   onOpenDetail,
   isLoading,
+  onRestoreHistory,
+  onRemoveHistory,
+  onClearHistory,
 }) {
   const panelRef = useRef(null);
   const sentinelRef = useRef(null);
+  const isHistoryMode = mode === "history";
   const hasMore =
+    !isHistoryMode &&
     pagination &&
     pagination.currentPage &&
     pagination.totalPages &&
@@ -55,9 +127,26 @@ export function CatalogView({
   if (!items || items.length === 0) {
     return (
       <section className="panel" ref={panelRef}>
+        <div className="catalog-panel-header">
+          <div>
+            <h2>{title}</h2>
+            <p className="catalog-panel-subtitle">{subtitle}</p>
+          </div>
+          {isHistoryMode ? (
+            <button
+              className="ghost-button ghost-button--small"
+              type="button"
+              onClick={onClearHistory}
+            >
+              Xóa all lịch sử
+            </button>
+          ) : null}
+        </div>
         <div className="empty-state">
           <p className="empty-state-message">
-            Không có phim nào. Hãy thử tìm kiếm hoặc đổi nguồn.
+            {isHistoryMode
+              ? "Chưa có lịch sử xem nào được lưu."
+              : "Không có phim nào. Hãy thử tìm kiếm hoặc đổi nguồn."}
           </p>
         </div>
       </section>
@@ -66,16 +155,32 @@ export function CatalogView({
 
   return (
     <section className="panel" ref={panelRef}>
+      <div className="catalog-panel-header">
+        <div>
+          <h2>{title}</h2>
+          <p className="catalog-panel-subtitle">{subtitle}</p>
+        </div>
+        {isHistoryMode ? (
+          <button
+            className="ghost-button ghost-button--small"
+            type="button"
+            onClick={onClearHistory}
+          >
+            Xóa all lịch sử
+          </button>
+        ) : null}
+      </div>
+
       <div className="catalog-grid">
         {items.map((item) => (
           <article
             className="catalog-card catalog-card--interactive"
             key={item.id}
-            onClick={() => onOpenDetail(item.slug)}
+            onClick={() => onOpenDetail(item.slug, isHistoryMode ? item : undefined)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                onOpenDetail(item.slug);
+                onOpenDetail(item.slug, isHistoryMode ? item : undefined);
               }
             }}
             role="button"
@@ -83,20 +188,53 @@ export function CatalogView({
           >
             <Poster item={item} />
             <div className="catalog-card-content">
-              <h3>{item.name}</h3>
+              <div className="catalog-card-headline">
+                <h3>{item.name}</h3>
+                {isHistoryMode ? (
+                  <HistoryCardMenu onRemove={() => onRemoveHistory(item.id)} />
+                ) : null}
+              </div>
               <p className="catalog-origin">
                 {item.originName || "No original title"}
               </p>
               <div className="catalog-meta">
-                {[item.year, item.type, item.quality, item.lang]
+                {(isHistoryMode
+                  ? [item.serverName, item.sourceLabel || item.sourceId, item.updatedAtLabel]
+                  : [item.year, item.type, item.quality, item.lang]
+                )
                   .filter(Boolean)
                   .map((part) => (
                     <span key={part}>{part}</span>
                   ))}
               </div>
               <p className="catalog-episode">
-                {item.episodeCurrent || "No episode info"}
+                {isHistoryMode
+                  ? item.episodeName ||
+                    "Tập " +
+                      ((typeof item.episodeIndex === "number"
+                        ? item.episodeIndex
+                        : 0) + 1)
+                  : item.episodeCurrent || "No episode info"}
               </p>
+              {isHistoryMode ? (
+                <p className="catalog-history-note">
+                  Xem gần nhất: {formatUpdatedAt(item.updatedAt)}
+                </p>
+              ) : null}
+              {isHistoryMode ? (
+                <div
+                  className="catalog-card-actions"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <button
+                    className="primary-button ghost-button--small"
+                    type="button"
+                    onClick={() => onRestoreHistory(item)}
+                  >
+                    Play
+                  </button>
+                </div>
+              ) : null}
             </div>
           </article>
         ))}

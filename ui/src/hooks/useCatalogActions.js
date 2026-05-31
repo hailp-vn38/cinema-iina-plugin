@@ -1,6 +1,9 @@
 import { useCallback } from "react";
 import { useSourceProvider } from "./useSourceProvider.js";
-import { useAppStore } from "../store/appStore.js";
+import {
+  HISTORY_CATEGORY_SLUG,
+  useAppStore,
+} from "../store/appStore.js";
 
 export function useCatalogActions() {
   const provider = useSourceProvider();
@@ -18,35 +21,23 @@ export function useCatalogActions() {
   );
   const setCatalogLoading = useAppStore((state) => state.setCatalogLoading);
   const setCatalogError = useAppStore((state) => state.setCatalogError);
+  const showHistoryCatalog = useAppStore((state) => state.showHistoryCatalog);
+
+  const loadHistory = useCallback(() => {
+    showHistoryCatalog();
+  }, [showHistoryCatalog]);
 
   const loadHome = useCallback(async () => {
-    console.log("[useCatalogActions] loadHome called, provider:", provider);
-    if (!provider || !provider.supports.home) {
-      setCatalogError("Source này chưa hỗ trợ home.");
-      return;
-    }
-
-    setCatalogLoading("Đang tải dữ liệu từ " + provider.label + "...");
-    try {
-      const payload = await provider.getHome();
-      console.log("[useCatalogActions] loadHome success:", payload);
-      applyCatalogPayload(payload, activeSourceId);
-    } catch (error) {
-      console.error("[useCatalogActions] loadHome error:", error);
-      setCatalogError(
-        error && error.message ? error.message : "Unknown provider error",
-      );
-    }
-  }, [
-    activeSourceId,
-    applyCatalogPayload,
-    provider,
-    setCatalogError,
-    setCatalogLoading,
-  ]);
+    loadHistory();
+  }, [loadHistory]);
 
   const loadCategory = useCallback(
     async (slug) => {
+      if (slug === HISTORY_CATEGORY_SLUG) {
+        loadHistory();
+        return;
+      }
+
       if (!provider || !provider.supports.categories || !provider.getCategory) {
         setCatalogError("Source này chưa hỗ trợ category.");
         return;
@@ -68,6 +59,7 @@ export function useCatalogActions() {
       provider,
       setCatalogError,
       setCatalogLoading,
+      loadHistory,
     ],
   );
 
@@ -84,6 +76,10 @@ export function useCatalogActions() {
     if (!activeCategory) {
       console.warn("[useCatalogActions] No activeCategory, aborting");
       setCatalogError("Không có category được chọn.");
+      return;
+    }
+
+    if (activeCategory === HISTORY_CATEGORY_SLUG) {
       return;
     }
 
@@ -137,7 +133,7 @@ export function useCatalogActions() {
     async (keyword) => {
       const trimmedKeyword = String(keyword || "").trim();
       if (!trimmedKeyword) {
-        await loadHome();
+        loadHistory();
         return;
       }
 
@@ -159,7 +155,7 @@ export function useCatalogActions() {
     [
       activeSourceId,
       applyCatalogPayload,
-      loadHome,
+      loadHistory,
       provider,
       setCatalogError,
       setCatalogLoading,
@@ -168,6 +164,7 @@ export function useCatalogActions() {
 
   return {
     loadHome,
+    loadHistory,
     loadCategory,
     loadMore,
     search,
