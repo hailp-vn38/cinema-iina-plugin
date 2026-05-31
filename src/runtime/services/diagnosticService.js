@@ -10,6 +10,12 @@ export function createDiagnosticService({ runtimeStore, console }) {
     recordAppMessage(name) {
       runtimeStore.setLastAppMessage(name);
     },
+    recordPlayStage(stage, payload) {
+      runtimeStore.setPlayStage(stage);
+      if (payload) {
+        runtimeStore.setPlayPayloadMeta(payload);
+      }
+    },
     recordError(prefix, error) {
       const message = error && error.message ? error.message : String(error);
       runtimeStore.setLastError(prefix + ": " + message);

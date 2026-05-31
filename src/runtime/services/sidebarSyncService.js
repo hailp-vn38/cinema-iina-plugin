@@ -2,8 +2,12 @@ import { RUNTIME_EVENTS } from "../../shared/contracts/events.js";
 
 export function createSidebarSyncService({ bus, runtimeStore, playbackStore, diagnosticService }) {
   function emit(name, payload) {
-    bus.emit(name, payload);
     diagnosticService.recordAppMessage(name);
+    const nextPayload =
+      name === RUNTIME_EVENTS.APP_DIAGNOSTIC
+        ? diagnosticService.snapshot()
+        : payload;
+    bus.emit(name, nextPayload);
   }
 
   return {

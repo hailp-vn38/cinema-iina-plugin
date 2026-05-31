@@ -37,9 +37,11 @@ const playbackService = createPlaybackService({
   runtimeStore,
   sidebarSyncService,
   playbackStateService,
+  diagnosticService,
 });
 
 let sidebarLoaded = false;
+let messagesRegistered = false;
 
 function loadSidebar() {
   if (sidebarLoaded) {
@@ -54,19 +56,27 @@ function loadSidebar() {
   sidebarSyncService.syncDiagnostic();
 }
 
-registerMessages({
-  bus,
-  runtimeStore,
-  sidebarSyncService,
-  diagnosticService,
-  playbackService,
-});
+function ensureMessagesRegistered() {
+  if (messagesRegistered) {
+    return;
+  }
+
+  messagesRegistered = true;
+  registerMessages({
+    bus,
+    runtimeStore,
+    sidebarSyncService,
+    diagnosticService,
+    playbackService,
+  });
+}
 
 playbackStateService.register();
 
 event.on("iina.window-loaded", () => {
   runtimeStore.setWindowLoaded(true);
   loadSidebar();
+  ensureMessagesRegistered();
   runtimeStore.setState("ready", "Playback runtime ready.");
   sidebarSyncService.syncAll();
 });

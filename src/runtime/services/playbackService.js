@@ -5,6 +5,7 @@ export function createPlaybackService({
   runtimeStore,
   sidebarSyncService,
   playbackStateService,
+  diagnosticService,
 }) {
   function validateEntries(payload) {
     const entries = Array.isArray(payload.entries) ? payload.entries : [];
@@ -71,15 +72,33 @@ export function createPlaybackService({
       const entries = validateEntries(payload);
       const episodeIndex =
         typeof payload.episodeIndex === "number" ? payload.episodeIndex : 0;
+      const currentEntry = entries[episodeIndex] || entries[0];
 
       runtimeStore.setState("loading", "Dang mo tap...");
       sidebarSyncService.syncState();
+      diagnosticService.recordPlayStage("before-loadfile-single", {
+        requestId: payload.requestId,
+        mode: "single",
+        title: payload.title,
+        url: currentEntry && currentEntry.url ? currentEntry.url : "",
+      });
+      runtimeStore.setState("loading", "Runtime dang goi loadfile single.");
+      sidebarSyncService.syncState();
+      sidebarSyncService.syncDiagnostic();
       loadEntries({
         payload,
         entries,
         startIndex: episodeIndex,
         appendRest: false,
       });
+      diagnosticService.recordPlayStage("after-loadfile-single", {
+        requestId: payload.requestId,
+        mode: "single",
+        title: payload.title,
+        url: currentEntry && currentEntry.url ? currentEntry.url : "",
+      });
+      runtimeStore.setState("loading", "Runtime da goi xong loadfile single.");
+      sidebarSyncService.syncState();
       runtimeStore.setState("ready", "Dang phat: " + (payload.episodeName || "episode"));
       sidebarSyncService.syncAll();
     },
@@ -87,15 +106,33 @@ export function createPlaybackService({
       const entries = validateEntries(payload);
       const startEpisodeIndex =
         typeof payload.startEpisodeIndex === "number" ? payload.startEpisodeIndex : 0;
+      const currentEntry = entries[startEpisodeIndex] || entries[0];
 
       runtimeStore.setState("loading", "Dang them playlist...");
       sidebarSyncService.syncState();
+      diagnosticService.recordPlayStage("before-loadfile-playlist", {
+        requestId: payload.requestId,
+        mode: "playlist",
+        title: payload.title,
+        url: currentEntry && currentEntry.url ? currentEntry.url : "",
+      });
+      runtimeStore.setState("loading", "Runtime dang goi loadfile playlist.");
+      sidebarSyncService.syncState();
+      sidebarSyncService.syncDiagnostic();
       loadEntries({
         payload,
         entries,
         startIndex: startEpisodeIndex,
         appendRest: true,
       });
+      diagnosticService.recordPlayStage("after-loadfile-playlist", {
+        requestId: payload.requestId,
+        mode: "playlist",
+        title: payload.title,
+        url: currentEntry && currentEntry.url ? currentEntry.url : "",
+      });
+      runtimeStore.setState("loading", "Runtime da goi xong loadfile playlist.");
+      sidebarSyncService.syncState();
       runtimeStore.setState("ready", "Dang phat va da them " + entries.length + " tap.");
       sidebarSyncService.syncAll();
     },

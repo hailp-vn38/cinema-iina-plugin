@@ -5,6 +5,9 @@ export const mockProvider = createBaseProvider({
   label: "Mock",
   supports: {
     home: true,
+    search: true,
+    categories: true,
+    servers: true,
   },
   async getHome() {
     return {
@@ -56,10 +59,88 @@ export const mockProvider = createBaseProvider({
       keyword: keyword,
     });
   },
-  async getDetail() {
-    throw new Error("Mock detail is not implemented in Phase 5.");
+  async getDetail(slug) {
+    return {
+      sourceId: "mock",
+      movieId: slug || "mock-1",
+      slug: slug || "mock-1",
+      title: slug === "mock-2" ? "Mock Movie Two" : "Mock Movie One",
+      originName: slug === "mock-2" ? "Prototype B" : "Prototype A",
+      posterUrl: "",
+      content: "Mock detail view for UI development.",
+      quality: "HD",
+      lang: "Demo",
+      year: "2026",
+      time: "24 phút",
+      episodeCurrent: "Tập 2",
+      serverName: "Mock Server",
+      activeServerIndex: 0,
+      servers: [
+        {
+          id: "mock-server-1",
+          name: "Mock Server",
+          entries: [
+            {
+              name: "1",
+              slug: "1",
+              url: "https://example.com/mock-episode-1.m3u8",
+            },
+            {
+              name: "2",
+              slug: "2",
+              url: "https://example.com/mock-episode-2.m3u8",
+            },
+          ],
+        },
+      ],
+      entries: [
+        {
+          name: "1",
+          slug: "1",
+          url: "https://example.com/mock-episode-1.m3u8",
+        },
+        {
+          name: "2",
+          slug: "2",
+          url: "https://example.com/mock-episode-2.m3u8",
+        },
+      ],
+    };
   },
-  toPlaybackPayload() {
-    throw new Error("Mock playback mapping is not implemented in Phase 5.");
+  toPlaybackPayload(detail, options = {}) {
+    if (!detail || !Array.isArray(detail.entries) || !detail.entries.length) {
+      throw new Error("Mock source has no playable entries.");
+    }
+
+    if (options.mode === "all") {
+      return {
+        sourceId: "mock",
+        movieId: detail.movieId,
+        detailSlug: detail.slug,
+        title: detail.title,
+        serverId: "mock-server-1",
+        startEpisodeIndex:
+          typeof options.startEpisodeIndex === "number"
+            ? options.startEpisodeIndex
+            : 0,
+        entries: detail.entries,
+      };
+    }
+
+    const episodeIndex =
+      typeof options.episodeIndex === "number" ? options.episodeIndex : 0;
+    return {
+      sourceId: "mock",
+      movieId: detail.movieId,
+      detailSlug: detail.slug,
+      title: detail.title,
+      serverId: "mock-server-1",
+      episodeIndex,
+      episodeName:
+        detail.entries[episodeIndex] && detail.entries[episodeIndex].name
+          ? detail.entries[episodeIndex].name
+          : "",
+      entries: detail.entries,
+    };
   },
 });

@@ -1,6 +1,6 @@
 ┌─────────────────────────────────────┐
 │                                     │
-│  [ Tìm kiếm    ] [ modal chọn pro ] │
+│  [ Tìm kiếm    ] [ modal chọn pre ] │
 │                                     │
 ├─────────────────────────────────────┤
 │ [Phim mới] [TV Show][list category]     
