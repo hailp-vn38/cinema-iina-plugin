@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "description": "Multi-source movie browser for IINA with React webview UI.",
   "author": {
-    "name": "Lam Phuc Hai",
-    "email": "lamphuchai@example.com",
-    "url": "https://github.com/lamphuchai"
+    "name": "HaiLP",
+    "email": "lamphuchai.dev@gmail.com",
+    "url": "https://github.com/hailp-vn38"
   },
   "entry": "src/runtime/index.js",
   "permissions": [
