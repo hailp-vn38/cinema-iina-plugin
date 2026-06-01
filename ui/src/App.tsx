@@ -12,7 +12,6 @@ import { useSourceProvider } from "./hooks/useSourceProvider";
 import { Header } from "./components/layout/Header";
 import { CatalogView } from "./components/catalog/CatalogView";
 import { DetailView } from "./components/detail/DetailView";
-import { DiagnosticPanel } from "./components/diagnostic/DiagnosticPanel";
 
 interface HistoryCatalogItem extends CatalogItem {
   sourceLabel: string;
@@ -216,15 +215,6 @@ export default function App(): ReactElement {
           />
         )}
 
-        <DiagnosticPanel
-          diagnostic={diagnostic}
-          status={status}
-          message={message}
-          view={view}
-          lastEventName={lastEventName}
-          runtimeEventCount={runtimeEventCount}
-          playback={playback}
-        />
       </section>
     </main>
   );

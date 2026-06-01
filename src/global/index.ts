@@ -31,6 +31,8 @@ let pendingCommand: PlayEpisodeCommand | PlayAllCommand | null = null;
 let bootstrapEpisodePending = false;
 let bootstrapPlaylistPending = false;
 let readyDispatchTimer: ReturnType<typeof setTimeout> | null = null;
+const sidebarCapablePlayers = new Map<string, boolean>();
+let preferredSidebarPlayerId = "";
 
 const state: AppStatePayload = {
   status: "booting",
@@ -81,6 +83,30 @@ function syncPreferencesIntoState(): void {
       String(preferences.get("kkphimApiBase") || "").trim() ||
       DEFAULT_PROVIDER_ENDPOINTS.kkphimApiBase,
   };
+}
+
+function pickSidebarPlayerTarget(): string | null {
+  if (
+    preferredSidebarPlayerId &&
+    sidebarCapablePlayers.get(preferredSidebarPlayerId)
+  ) {
+    return preferredSidebarPlayerId;
+  }
+
+  const players = Array.from(sidebarCapablePlayers.entries())
+    .filter(([, canOpenSidebar]) => canOpenSidebar)
+    .map(([playerId]) => playerId);
+  if (!players.length) {
+    return null;
+  }
+
+  preferredSidebarPlayerId = players[players.length - 1];
+  return preferredSidebarPlayerId;
+}
+
+function updateSidebarPlayerCapability(playerId: string, payload: unknown): void {
+  const data = payload as { canOpenSidebar?: boolean } | null;
+  sidebarCapablePlayers.set(playerId, Boolean(data?.canOpenSidebar));
 }
 
 function writePendingPlayHandoff(handoff: PendingPlayHandoff): void {
@@ -335,6 +361,13 @@ function rememberPlayMeta(payload: PlayEpisodeCommand | PlayAllCommand, mode: st
 }
 
 global.onMessage(GLOBAL_MESSAGES.PLAYER_READY, (_payload: unknown, player?: string) => {
+  if (player) {
+    updateSidebarPlayerCapability(player, _payload);
+    if (!preferredSidebarPlayerId) {
+      preferredSidebarPlayerId = player;
+    }
+  }
+
   if (player && activePlayerId !== null && player !== String(activePlayerId)) {
     return;
   }
@@ -354,6 +387,23 @@ global.onMessage(GLOBAL_MESSAGES.PLAYER_READY, (_payload: unknown, player?: stri
   syncAll();
 });
 
+global.onMessage(GLOBAL_MESSAGES.PLAYER_BECAME_MAIN, (_payload: unknown, player?: string) => {
+  if (!player) {
+    return;
+  }
+
+  updateSidebarPlayerCapability(player, _payload);
+  preferredSidebarPlayerId = player;
+});
+
+global.onMessage(GLOBAL_MESSAGES.PLAYER_STATUS, (payload: unknown, player?: string) => {
+  if (!player) {
+    return;
+  }
+
+  updateSidebarPlayerCapability(player, payload);
+});
+
 global.onMessage(GLOBAL_MESSAGES.PLAYER_WINDOW_LOADED, (_payload: unknown, player?: string) => {
   if (player && activePlayerId !== null && player !== String(activePlayerId)) {
     return;
@@ -368,6 +418,13 @@ global.onMessage(GLOBAL_MESSAGES.PLAYER_WINDOW_LOADED, (_payload: unknown, playe
 });
 
 global.onMessage(GLOBAL_MESSAGES.PLAYER_CLOSED, (_payload: unknown, player?: string) => {
+  if (player) {
+    sidebarCapablePlayers.delete(player);
+    if (preferredSidebarPlayerId === player) {
+      preferredSidebarPlayerId = "";
+    }
+  }
+
   if (player && activePlayerId !== null && player !== String(activePlayerId)) {
     return;
   }
@@ -445,6 +502,14 @@ global.onMessage(GLOBAL_MESSAGES.PLAYER_WINDOW_VISIBLE, (payload: any, player?: 
 menu.addItem(
   menu.item("Open Cinema", () => {
     syncPreferencesIntoState();
+    const sidebarTarget = pickSidebarPlayerTarget();
+    if (sidebarTarget) {
+      diagnostic.bridgePhase = "open-sidebar-in-player";
+      setState("ready", "Dang mo sidebar trong player.");
+      global.postMessage(sidebarTarget, GLOBAL_MESSAGES.SHOW_SIDEBAR, null);
+      syncAll();
+      return;
+    }
     ensureWindow();
     syncAll();
   }),

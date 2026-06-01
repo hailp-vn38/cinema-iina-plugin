@@ -134,6 +134,12 @@ function postToGlobal(name: string, payload: unknown): void {
   globalApi.postMessage(name, payload);
 }
 
+function currentSidebarAvailability(): { canOpenSidebar: boolean } {
+  return {
+    canOpenSidebar: Boolean(core.window?.loaded && core.status?.url),
+  };
+}
+
 function updateManagedPlayerWindowDiagnostic(): {
   visible: boolean;
   miniaturized: boolean;
@@ -288,7 +294,17 @@ function notifyGlobalReady(): void {
   globalReadyPosted = true;
   runtimeStore.diagnostic.bridgePhase = "player-ready-posted";
   runtimeStore.diagnostic.playerReady = true;
-  postToGlobal(GLOBAL_MESSAGES.PLAYER_READY, { label: playerLabel });
+  postToGlobal(GLOBAL_MESSAGES.PLAYER_READY, {
+    label: playerLabel,
+    ...currentSidebarAvailability(),
+  });
+}
+
+function postPlayerStatus(): void {
+  postToGlobal(GLOBAL_MESSAGES.PLAYER_STATUS, {
+    label: playerLabel,
+    ...currentSidebarAvailability(),
+  });
 }
 
 function readPendingPlayHandoff(): PendingPlayHandoff | null {
@@ -411,6 +427,19 @@ playbackStateService.register();
 
 if (globalMessagingAvailable) {
   globalApi.onMessage(
+    GLOBAL_MESSAGES.SHOW_SIDEBAR,
+    () => {
+      managedByGlobal = false;
+      runtimeStore.diagnostic.runtimeMode = playerLabel ? "managed-player" : "sidebar-runtime";
+      runtimeStore.diagnostic.bridgePhase = "show-sidebar-from-global";
+      syncPreferencesIntoStore();
+      loadSidebar();
+      ensureMessagesRegistered();
+      sidebar.show();
+      sidebarSyncService.syncAll();
+    },
+  );
+  globalApi.onMessage(
     GLOBAL_MESSAGES.PLAYER_BOOTSTRAP_EPISODE,
     (payload: PlayEpisodeCommand) => {
       managedByGlobal = true;
@@ -463,6 +492,7 @@ if (globalMessagingAvailable) {
 
   event.on("mpv.file-loaded", () => {
     tryApplyPendingPlayHandoff();
+    postPlayerStatus();
     if (pendingBootstrapEpisode || pendingBootstrapPlaylist) {
       finalizeBootstrapIfReady();
     }
@@ -471,6 +501,7 @@ if (globalMessagingAvailable) {
 
   event.on("iina.file-loaded", () => {
     tryApplyPendingPlayHandoff();
+    postPlayerStatus();
     if (pendingBootstrapEpisode || pendingBootstrapPlaylist) {
       finalizeBootstrapIfReady();
     }
@@ -485,6 +516,16 @@ if (globalMessagingAvailable) {
   });
 
   notifyGlobalReady();
+
+  event.on("iina.window-main.changed", (status: boolean) => {
+    if (!status) {
+      return;
+    }
+    postToGlobal(GLOBAL_MESSAGES.PLAYER_BECAME_MAIN, {
+      label: playerLabel,
+      ...currentSidebarAvailability(),
+    });
+  });
 }
 
 event.on("iina.window-loaded", () => {
@@ -495,6 +536,7 @@ event.on("iina.window-loaded", () => {
   ensureMessagesRegistered();
   runtimeStore.setState("ready", "Playback runtime ready.");
   sidebarSyncService.syncAll();
+  postPlayerStatus();
   postToGlobal(GLOBAL_MESSAGES.PLAYER_WINDOW_LOADED, { label: playerLabel });
   notifyGlobalReady();
 });
