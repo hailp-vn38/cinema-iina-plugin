@@ -3,7 +3,7 @@ import { RUNTIME_EVENTS } from "./contracts/events";
 
 export const PLUGIN_METADATA = {
   name: "Cinema Sources",
-  version: "0.1.0",
+  version: "1.0.1",
   sidebarTabName: "Cinema",
 } as const;
 

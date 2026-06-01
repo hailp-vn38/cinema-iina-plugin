@@ -22,7 +22,7 @@ npm run package
 5. Chọn file:
 
 ```text
-dist/releases/Cinema Sources-0.1.0.iinaplgz
+dist/releases/Cinema Sources-1.0.1.iinaplgz
 ```
 
 6. Cài xong, đóng và mở lại IINA.
@@ -130,7 +130,7 @@ npm run package
 
 - UI inline: `dist/ui/index.html`
 - Runtime bundle: `dist/runtime/index.js`
-- Plugin package: `dist/releases/Cinema Sources-0.1.0.iinaplgz`
+- Plugin package: `dist/releases/Cinema Sources-1.0.1.iinaplgz`
 
 ## Entry points quan trọng
 
