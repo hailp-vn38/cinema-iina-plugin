@@ -10,13 +10,8 @@
   },
   "entry": "src/runtime/index.js",
   "globalEntry": "src/global/index.js",
-  "permissions": [
-    "network-request",
-    "file-system"
-  ],
-  "allowedDomains": [
-    "*"
-  ],
+  "permissions": ["network-request", "file-system"],
+  "allowedDomains": ["*"],
   "preferencesPage": "pref.html",
   "preferenceDefaults": {
     "ophimApiBase": "https://ophim1.com/v1/api",
