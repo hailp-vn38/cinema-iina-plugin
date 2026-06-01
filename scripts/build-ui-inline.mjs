@@ -1,11 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
 const outdir = resolve(root, "dist/ui");
+const indexHtmlPath = resolve(outdir, "index.html");
 
-// Step 1: Run Vite build
 console.log("Building with Vite...");
 const viteResult = spawnSync(
   "npx",
@@ -20,24 +20,108 @@ if (viteResult.status !== 0) {
   process.exit(viteResult.status ?? 1);
 }
 
-// Step 2: Find built JS and CSS files
-const assetsDir = resolve(outdir, "assets");
-const files = readdirSync(assetsDir);
-const jsFile = files.find((f) => f.startsWith("index-") && f.endsWith(".js"));
-const cssFile = files.find((f) => f.startsWith("index-") && f.endsWith(".css"));
-
-if (!jsFile || !cssFile) {
-  console.error("Missing JS or CSS file in assets");
-  process.exit(1);
+function readText(path) {
+  return readFileSync(path, "utf-8");
 }
 
-console.log("Found JS:", jsFile, "CSS:", cssFile);
+function readBuiltAsset(path) {
+  try {
+    return readText(path);
+  } catch (error) {
+    const latestHtml = existsSync(indexHtmlPath) ? readText(indexHtmlPath) : "";
+    if (isAlreadyInlined(latestHtml)) {
+      return null;
+    }
 
-// Step 3: Read built files
-const js = readFileSync(resolve(assetsDir, jsFile), "utf-8");
-const css = readFileSync(resolve(assetsDir, cssFile), "utf-8");
+    throw error;
+  }
+}
 
-// Step 4: Create inline HTML
+function parseAssetPaths(html) {
+  const scriptMatch = html.match(/<script[^>]+src="([^"]+index-[^"]+\.js)"/i);
+  const cssMatch = html.match(/<link[^>]+href="([^"]+index-[^"]+\.css)"/i);
+
+  return {
+    jsHref: scriptMatch ? scriptMatch[1] : "",
+    cssHref: cssMatch ? cssMatch[1] : "",
+  };
+}
+
+function isAlreadyInlined(html) {
+  return (
+    !html.includes('src="./assets/') &&
+    !html.includes('href="./assets/') &&
+    html.includes("<style>") &&
+    html.includes("<script>")
+  );
+}
+
+function resolveAssetPath(assetHref) {
+  return resolve(outdir, assetHref.replace(/^\.\//, ""));
+}
+
+function getBuiltAssets() {
+  const html = readText(indexHtmlPath);
+  const { jsHref, cssHref } = parseAssetPaths(html);
+
+  if (!jsHref || !cssHref) {
+    if (isAlreadyInlined(html)) {
+      return {
+        alreadyInlined: true,
+      };
+    }
+
+    throw new Error("Missing JS or CSS reference in Vite index.html");
+  }
+
+  const jsPath = resolveAssetPath(jsHref);
+  const cssPath = resolveAssetPath(cssHref);
+
+  if (!existsSync(jsPath) || !existsSync(cssPath)) {
+    const latestHtml = readText(indexHtmlPath);
+    if (isAlreadyInlined(latestHtml)) {
+      return {
+        alreadyInlined: true,
+      };
+    }
+
+    throw new Error(
+      "Built assets were removed before inlining completed: " +
+        [!existsSync(jsPath) ? jsPath : null, !existsSync(cssPath) ? cssPath : null]
+          .filter(Boolean)
+          .join(", "),
+    );
+  }
+
+  return {
+    alreadyInlined: false,
+    jsPath,
+    cssPath,
+  };
+}
+
+const builtAssets = getBuiltAssets();
+
+if (builtAssets.alreadyInlined) {
+  console.log("UI already inlined by another build process.");
+  process.exit(0);
+}
+
+console.log(
+  "Found JS:",
+  builtAssets.jsPath.split("/").pop(),
+  "CSS:",
+  builtAssets.cssPath.split("/").pop(),
+);
+
+const js = readBuiltAsset(builtAssets.jsPath);
+const css = readBuiltAsset(builtAssets.cssPath);
+
+if (js === null || css === null) {
+  console.log("UI already inlined by another build process.");
+  process.exit(0);
+}
+
 const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,7 +144,6 @@ ${js}
 </body>
 </html>`;
 
-// Step 5: Write inline HTML, remove assets
-writeFileSync(resolve(outdir, "index.html"), html);
-rmSync(assetsDir, { recursive: true, force: true });
+writeFileSync(indexHtmlPath, html);
+rmSync(resolve(outdir, "assets"), { recursive: true, force: true });
 console.log("Created inline index.html, removed assets/");
