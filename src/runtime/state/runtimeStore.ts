@@ -11,7 +11,7 @@ export function createRuntimeStore(): RuntimeStore {
       message: "Khoi tao runtime...",
     },
     diagnostic: {
-      pluginVersion: "0.2.0-dev.0",
+      pluginVersion: "0.1.0",
       sidebarLoaded: false,
       windowLoaded: false,
       lastUiMessage: "",

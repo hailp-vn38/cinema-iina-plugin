@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -7,6 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const buildRoot = resolve(root, ".build/plugin");
 const releaseRoot = resolve(root, "dist/releases");
+const pluginInfo = JSON.parse(readFileSync(resolve(root, "Info.json"), "utf8"));
 
 const requiredPaths = [
   resolve(root, "Info.json"),
@@ -32,7 +33,8 @@ mkdirSync(resolve(buildRoot, "src/runtime"), { recursive: true });
 cpSync(resolve(root, "dist/runtime/index.js"), resolve(buildRoot, "src/runtime/index.js"));
 cpSync(resolve(root, "dist/ui"), resolve(buildRoot, "ui"), { recursive: true });
 
-const archivePath = resolve(releaseRoot, "Cinema Sources.iinaplgz");
+const archiveFileName = `${pluginInfo.name}-${pluginInfo.version}.iinaplgz`;
+const archivePath = resolve(releaseRoot, archiveFileName);
 rmSync(archivePath, { force: true });
 
 const zipResult = spawnSync(
