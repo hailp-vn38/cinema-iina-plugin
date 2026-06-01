@@ -8,7 +8,7 @@ const outdir = resolve(root, "dist/runtime");
 mkdirSync(outdir, { recursive: true });
 
 await build({
-  entryPoints: [resolve(root, "src/runtime/index.js")],
+  entryPoints: [resolve(root, "src/runtime/index.ts")],
   outfile: resolve(outdir, "index.js"),
   bundle: true,
   format: "iife",
