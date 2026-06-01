@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type {
+  AppConfigPayload,
   AppDiagnosticPayload,
   AppPlaybackStatePayload,
   AppPlayResultPayload,
@@ -19,6 +20,7 @@ import type {
   PlaybackState,
   SourceOption,
 } from "./types";
+import { DEFAULT_PROVIDER_ENDPOINTS } from "@shared/constants";
 
 const DEFAULT_SOURCES: SourceOption[] = [
   { id: "ophim", label: "OPhim", enabled: true },
@@ -117,6 +119,9 @@ export const useAppStore = create<AppStoreState>((set) => ({
   playback: createInitialPlayback(),
   history: [],
   diagnostic: createInitialDiagnostic(),
+  config: {
+    ...DEFAULT_PROVIDER_ENDPOINTS,
+  },
   setActiveSource(sourceId: string) {
     set({
       activeSourceId: sourceId,
@@ -453,6 +458,21 @@ export const useAppStore = create<AppStoreState>((set) => ({
         lastPlayEntryUrl: payload?.lastPlayEntryUrl
           ? payload.lastPlayEntryUrl
           : "",
+      },
+    }));
+  },
+  applyConfig(payload: AppConfigPayload) {
+    set((state) => ({
+      connected: true,
+      lastEventName: "app_config",
+      runtimeEventCount: state.runtimeEventCount + 1,
+      config: {
+        ophimApiBase:
+          String(payload?.ophimApiBase || "").trim() ||
+          DEFAULT_PROVIDER_ENDPOINTS.ophimApiBase,
+        kkphimApiBase:
+          String(payload?.kkphimApiBase || "").trim() ||
+          DEFAULT_PROVIDER_ENDPOINTS.kkphimApiBase,
       },
     }));
   },

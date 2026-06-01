@@ -1,5 +1,6 @@
 import { RUNTIME_EVENTS } from "../../shared/contracts/events";
 import type {
+  AppConfigPayload,
   AppPlayResultPayload,
   AppPlaybackStatePayload,
 } from "../../shared/contracts/models";
@@ -38,6 +39,13 @@ export function createSidebarSyncService({
     syncDiagnostic() {
       emit(RUNTIME_EVENTS.APP_DIAGNOSTIC, diagnosticService.snapshot());
     },
+    syncConfig() {
+      const payload: AppConfigPayload = {
+        ophimApiBase: runtimeStore.config.ophimApiBase,
+        kkphimApiBase: runtimeStore.config.kkphimApiBase,
+      };
+      emit(RUNTIME_EVENTS.APP_CONFIG, payload);
+    },
     syncPlayback() {
       const payload: AppPlaybackStatePayload = {
         active: playbackStore.active,
@@ -57,6 +65,7 @@ export function createSidebarSyncService({
     },
     syncAll() {
       this.syncState();
+      this.syncConfig();
       this.syncPlayback();
       this.syncDiagnostic();
     },

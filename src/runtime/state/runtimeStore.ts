@@ -1,4 +1,5 @@
 import type { RuntimeStore } from "../types";
+import { DEFAULT_PROVIDER_ENDPOINTS } from "../../shared/constants";
 
 export function createRuntimeStore(): RuntimeStore {
   const store: RuntimeStore = {
@@ -22,6 +23,9 @@ export function createRuntimeStore(): RuntimeStore {
       lastPlayTitle: "",
       lastPlayEntryUrl: "",
     },
+    config: {
+      ...DEFAULT_PROVIDER_ENDPOINTS,
+    },
     setSidebarLoaded(value) {
       store.sidebarLoaded = value;
       store.diagnostic.sidebarLoaded = value;
@@ -32,6 +36,12 @@ export function createRuntimeStore(): RuntimeStore {
     },
     setUiInitialized(value) {
       store.uiInitialized = value;
+    },
+    setConfig(payload) {
+      store.config = {
+        ophimApiBase: payload.ophimApiBase || DEFAULT_PROVIDER_ENDPOINTS.ophimApiBase,
+        kkphimApiBase: payload.kkphimApiBase || DEFAULT_PROVIDER_ENDPOINTS.kkphimApiBase,
+      };
     },
     setState(status, message) {
       store.state = { status, message };

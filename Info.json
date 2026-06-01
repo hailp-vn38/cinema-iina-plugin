@@ -1,7 +1,7 @@
 {
   "name": "Cinema Sources",
   "identifier": "com.lamphuchai.iina.cinema-sources",
-  "version": "0.2.0-dev.0",
+  "version": "0.1.0",
   "description": "Multi-source movie browser for IINA with React webview UI.",
   "author": {
     "name": "Lam Phuc Hai",
@@ -16,7 +16,10 @@
     "*"
   ],
   "preferencesPage": "pref.html",
-  "preferenceDefaults": {},
+  "preferenceDefaults": {
+    "ophimApiBase": "https://ophim1.com/v1/api",
+    "kkphimApiBase": "https://phimapi.com"
+  },
   "sidebarTab": {
     "name": "Cinema"
   }

@@ -1,4 +1,5 @@
-import { OPHIM_API_BASE } from "./constants";
+import { DEFAULT_PROVIDER_ENDPOINTS } from "@shared/constants";
+import { getProviderConfig } from "../../config/providerConfig";
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -72,11 +73,18 @@ export interface OphimDetailPayloadRaw {
 
 export const ophimApi = {
   getHome() {
-    return fetchJson<OphimHomePayloadRaw>(OPHIM_API_BASE + "/home");
+    const apiBase =
+      getProviderConfig().ophimApiBase ||
+      DEFAULT_PROVIDER_ENDPOINTS.ophimApiBase;
+    return fetchJson<OphimHomePayloadRaw>(
+      apiBase + "/home",
+    );
   },
   getCategory(slug: string, page = 1) {
+    const apiBase =
+      getProviderConfig().ophimApiBase || DEFAULT_PROVIDER_ENDPOINTS.ophimApiBase;
     return fetchJson<OphimCategoryPayloadRaw>(
-      OPHIM_API_BASE +
+      apiBase +
         "/danh-sach/" +
         encodeURIComponent(slug) +
         "?page=" +
@@ -85,13 +93,17 @@ export const ophimApi = {
     );
   },
   search(keyword: string) {
+    const apiBase =
+      getProviderConfig().ophimApiBase || DEFAULT_PROVIDER_ENDPOINTS.ophimApiBase;
     return fetchJson<OphimHomePayloadRaw>(
-      OPHIM_API_BASE + "/tim-kiem?keyword=" + encodeURIComponent(keyword),
+      apiBase + "/tim-kiem?keyword=" + encodeURIComponent(keyword),
     );
   },
   getDetail(slug: string) {
+    const apiBase =
+      getProviderConfig().ophimApiBase || DEFAULT_PROVIDER_ENDPOINTS.ophimApiBase;
     return fetchJson<OphimDetailPayloadRaw>(
-      OPHIM_API_BASE + "/phim/" + encodeURIComponent(slug),
+      apiBase + "/phim/" + encodeURIComponent(slug),
     );
   },
 };

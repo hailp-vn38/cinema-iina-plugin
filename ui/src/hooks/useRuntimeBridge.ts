@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type {
+  AppConfigPayload,
   AppDiagnosticPayload,
   AppPlaybackStatePayload,
   AppPlayResultPayload,
@@ -8,10 +9,12 @@ import type {
 import { UI_COMMANDS } from "@shared/contracts/commands";
 import { RUNTIME_EVENTS } from "@shared/contracts/events";
 import { iinaClient } from "../bridge/iinaClient";
+import { setProviderConfig } from "../config/providerConfig";
 import { useAppStore } from "../store/appStore";
 
 export function useRuntimeBridge(): void {
   const applyAppState = useAppStore((state) => state.applyAppState);
+  const applyConfig = useAppStore((state) => state.applyConfig);
   const applyDiagnostic = useAppStore((state) => state.applyDiagnostic);
   const applyPlayResult = useAppStore((state) => state.applyPlayResult);
   const applyPlaybackState = useAppStore((state) => state.applyPlaybackState);
@@ -26,6 +29,12 @@ export function useRuntimeBridge(): void {
 
     iinaClient.on(RUNTIME_EVENTS.APP_DIAGNOSTIC, (payload) => {
       applyDiagnostic(payload as AppDiagnosticPayload);
+    });
+
+    iinaClient.on(RUNTIME_EVENTS.APP_CONFIG, (payload) => {
+      const config = payload as AppConfigPayload;
+      applyConfig(config);
+      setProviderConfig(config);
     });
 
     iinaClient.on(RUNTIME_EVENTS.APP_PLAY_RESULT, (payload) => {
@@ -88,6 +97,7 @@ export function useRuntimeBridge(): void {
     };
   }, [
     applyAppState,
+    applyConfig,
     applyDiagnostic,
     applyPlayResult,
     applyPlaybackState,

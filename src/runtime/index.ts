@@ -6,8 +6,9 @@ import { createPlaybackStateService } from "./services/playbackStateService";
 import { createSidebarSyncService } from "./services/sidebarSyncService";
 import { createPlaybackStore } from "./state/playbackStore";
 import { createRuntimeStore } from "./state/runtimeStore";
+import { DEFAULT_PROVIDER_ENDPOINTS } from "../shared/constants";
 
-const { console, core, event, mpv, sidebar } = iina;
+const { console, core, event, mpv, preferences, sidebar } = iina;
 
 const SIDEBAR_HTML_PATH = "ui/index.html";
 const runtimeStore = createRuntimeStore();
@@ -44,6 +45,17 @@ const playbackService = createPlaybackService({
 let sidebarLoaded = false;
 let messagesRegistered = false;
 
+function syncPreferencesIntoStore(): void {
+  runtimeStore.setConfig({
+    ophimApiBase:
+      String(preferences.get("ophimApiBase") || "").trim() ||
+      DEFAULT_PROVIDER_ENDPOINTS.ophimApiBase,
+    kkphimApiBase:
+      String(preferences.get("kkphimApiBase") || "").trim() ||
+      DEFAULT_PROVIDER_ENDPOINTS.kkphimApiBase,
+  });
+}
+
 function loadSidebar(): void {
   if (sidebarLoaded) {
     return;
@@ -69,6 +81,7 @@ function ensureMessagesRegistered(): void {
     sidebarSyncService,
     diagnosticService,
     playbackService,
+    syncPreferences: syncPreferencesIntoStore,
   });
 }
 
@@ -76,6 +89,7 @@ playbackStateService.register();
 
 event.on("iina.window-loaded", () => {
   runtimeStore.setWindowLoaded(true);
+  syncPreferencesIntoStore();
   loadSidebar();
   ensureMessagesRegistered();
   runtimeStore.setState("ready", "Playback runtime ready.");

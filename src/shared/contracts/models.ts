@@ -136,6 +136,11 @@ export interface AppDiagnosticPayload {
   lastPlayEntryUrl?: string;
 }
 
+export interface AppConfigPayload {
+  ophimApiBase: string;
+  kkphimApiBase: string;
+}
+
 export const COMMAND_MODEL_SHAPES = {
   playEpisode: {
     requestId: "string",
@@ -194,5 +199,9 @@ export const EVENT_MODEL_SHAPES = {
     lastUiMessage: "string",
     lastAppMessage: "string",
     lastError: "string",
+  },
+  appConfig: {
+    ophimApiBase: "string",
+    kkphimApiBase: "string",
   },
 } as const;

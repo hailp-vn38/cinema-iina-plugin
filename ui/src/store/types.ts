@@ -1,4 +1,5 @@
 import type {
+  AppConfigPayload,
   AppDiagnosticPayload,
   AppPlaybackStatePayload,
   AppPlayResultPayload,
@@ -88,6 +89,7 @@ export interface AppStoreState {
   playback: PlaybackState;
   history: HistoryEntry[];
   diagnostic: DiagnosticState;
+  config: AppConfigPayload;
   setActiveSource: (sourceId: string) => void;
   setStatus: (status: string, message?: string) => void;
   hydrateHistory: (entries: HistoryEntry[]) => void;
@@ -110,5 +112,6 @@ export interface AppStoreState {
   applyPlaybackState: (payload: AppPlaybackStatePayload) => void;
   applyAppState: (payload: AppStatePayload) => void;
   applyDiagnostic: (payload: AppDiagnosticPayload) => void;
+  applyConfig: (payload: AppConfigPayload) => void;
   recordRuntimeEvent: (eventName: string) => void;
 }

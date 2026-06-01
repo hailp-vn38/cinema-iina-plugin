@@ -1,4 +1,5 @@
 import type {
+  AppConfigPayload,
   AppDiagnosticPayload,
   AppPlaybackStatePayload,
   AppPlayResultPayload,
@@ -31,9 +32,11 @@ export interface RuntimeStore {
   windowLoaded: boolean;
   state: AppStatePayload;
   diagnostic: AppDiagnosticPayload;
+  config: AppConfigPayload;
   setSidebarLoaded: (value: boolean) => void;
   setWindowLoaded: (value: boolean) => void;
   setUiInitialized: (value: boolean) => void;
+  setConfig: (payload: AppConfigPayload) => void;
   setState: (status: string, message: string) => void;
   setLastUiMessage: (name: string) => void;
   setLastAppMessage: (name: string) => void;
@@ -78,6 +81,7 @@ export interface DiagnosticService {
 export interface SidebarSyncService {
   syncState: () => void;
   syncDiagnostic: () => void;
+  syncConfig: () => void;
   syncPlayback: () => void;
   postPlayResult: (payload: AppPlayResultPayload) => void;
   syncAll: () => void;

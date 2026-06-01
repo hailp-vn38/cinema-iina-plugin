@@ -7,6 +7,11 @@ export const PLUGIN_METADATA = {
   sidebarTabName: "Cinema",
 } as const;
 
+export const DEFAULT_PROVIDER_ENDPOINTS = {
+  ophimApiBase: "https://ophim1.com/v1/api",
+  kkphimApiBase: "https://phimapi.com",
+} as const;
+
 export const CONTRACTS = {
   commands: UI_COMMANDS,
   events: RUNTIME_EVENTS,

@@ -18,12 +18,14 @@ export function registerMessages({
   sidebarSyncService,
   diagnosticService,
   playbackService,
+  syncPreferences,
 }: {
   bus: RuntimeBus;
   runtimeStore: RuntimeStore;
   sidebarSyncService: SidebarSyncService;
   diagnosticService: DiagnosticService;
   playbackService: PlaybackService;
+  syncPreferences: () => void;
 }): void {
   bus.on(UI_COMMANDS.INIT, () => {
     runtimeStore.setUiInitialized(true);
@@ -33,11 +35,14 @@ export function registerMessages({
   });
 
   bus.on(UI_COMMANDS.REQUEST_DIAGNOSTIC, () => {
+    syncPreferences();
     diagnosticService.recordUiMessage(UI_COMMANDS.REQUEST_DIAGNOSTIC);
+    sidebarSyncService.syncConfig();
     sidebarSyncService.syncDiagnostic();
   });
 
   bus.on(UI_COMMANDS.REQUEST_RUNTIME_SYNC, () => {
+    syncPreferences();
     diagnosticService.recordUiMessage(UI_COMMANDS.REQUEST_RUNTIME_SYNC);
     sidebarSyncService.syncAll();
   });

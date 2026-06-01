@@ -20,11 +20,64 @@
       p {
         margin: 0 0 10px;
       }
+
+      .pref-section {
+        margin-top: 18px;
+      }
+
+      .pref-row {
+        margin-top: 12px;
+      }
+
+      .pref-row label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+
+      .pref-help {
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 12px;
+      }
+
+      input[type="text"],
+      input[type="url"] {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 560px;
+        padding: 8px 10px;
+        font: inherit;
+      }
     </style>
   </head>
   <body>
     <h1>Cinema Sources</h1>
-    <p>This is the new plugin scaffold for the React-based multi-source architecture.</p>
-    <p>The runtime is intentionally minimal during Phase 1.</p>
+    <p>Configure API endpoints for each provider. Re-open the sidebar after changing values to refresh runtime config.</p>
+
+    <section class="pref-section">
+      <div class="pref-row">
+        <label for="ophim-api-base">OPhim API Base</label>
+        <input
+          id="ophim-api-base"
+          type="url"
+          data-pref-key="ophimApiBase"
+          placeholder="https://ophim1.com/v1/api"
+          spellcheck="false"
+        />
+        <div class="pref-help">Example: <code>https://ophim1.com/v1/api</code></div>
+      </div>
+
+      <div class="pref-row">
+        <label for="kkphim-api-base">KKPhim API Base</label>
+        <input
+          id="kkphim-api-base"
+          type="url"
+          data-pref-key="kkphimApiBase"
+          placeholder="https://phimapi.com"
+          spellcheck="false"
+        />
+        <div class="pref-help">Example: <code>https://phimapi.com</code></div>
+      </div>
+    </section>
   </body>
 </html>

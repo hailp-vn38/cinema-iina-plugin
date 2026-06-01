@@ -1,4 +1,5 @@
-import { KKPHIM_API_BASE } from "./constants";
+import { DEFAULT_PROVIDER_ENDPOINTS } from "@shared/constants";
+import { getProviderConfig } from "../../config/providerConfig";
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -75,15 +76,19 @@ export interface KkphimDetailPayloadRaw {
 
 export const kkphimApi = {
   getHome(page = 1) {
+    const apiBase =
+      getProviderConfig().kkphimApiBase || DEFAULT_PROVIDER_ENDPOINTS.kkphimApiBase;
     return fetchJson<KkphimHomePayloadRaw>(
-      KKPHIM_API_BASE +
+      apiBase +
         "/danh-sach/phim-moi-cap-nhat?page=" +
         encodeURIComponent(page),
     );
   },
   getCategory(slug: string, page = 1) {
+    const apiBase =
+      getProviderConfig().kkphimApiBase || DEFAULT_PROVIDER_ENDPOINTS.kkphimApiBase;
     return fetchJson<KkphimListPayloadRaw>(
-      KKPHIM_API_BASE +
+      apiBase +
         "/v1/api/danh-sach/" +
         encodeURIComponent(slug) +
         "?page=" +
@@ -91,8 +96,10 @@ export const kkphimApi = {
     );
   },
   search(keyword: string, page = 1) {
+    const apiBase =
+      getProviderConfig().kkphimApiBase || DEFAULT_PROVIDER_ENDPOINTS.kkphimApiBase;
     return fetchJson<KkphimListPayloadRaw>(
-      KKPHIM_API_BASE +
+      apiBase +
         "/v1/api/tim-kiem?keyword=" +
         encodeURIComponent(keyword) +
         "&page=" +
@@ -100,8 +107,10 @@ export const kkphimApi = {
     );
   },
   getDetail(slug: string) {
+    const apiBase =
+      getProviderConfig().kkphimApiBase || DEFAULT_PROVIDER_ENDPOINTS.kkphimApiBase;
     return fetchJson<KkphimDetailPayloadRaw>(
-      KKPHIM_API_BASE + "/phim/" + encodeURIComponent(slug),
+      apiBase + "/phim/" + encodeURIComponent(slug),
     );
   },
 };
