@@ -37,6 +37,13 @@ export function Header({
     onSearch(searchInput);
   }
 
+  function handleSearchInput(value: string): void {
+    setSearchInput(value);
+    if (!value.trim()) {
+      onSearch("");
+    }
+  }
+
   const sourceOptions = sources.map((source) => ({
     value: source.id,
     label: source.label,
@@ -56,7 +63,7 @@ export function Header({
             className="search-input"
             type="search"
             value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+            onChange={(event) => handleSearchInput(event.target.value)}
             placeholder="Tìm kiếm phim..."
           />
           <button className="search-button" type="submit">
