@@ -1,7 +1,7 @@
 {
   "name": "Cinema Sources",
   "identifier": "com.lamphuchai.iina.cinema-sources",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Multi-source movie browser for IINA with React webview UI.",
   "author": {
     "name": "HaiLP",
