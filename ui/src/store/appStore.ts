@@ -84,6 +84,20 @@ function createInitialDiagnostic(): DiagnosticState {
     lastPlayMode: "",
     lastPlayTitle: "",
     lastPlayEntryUrl: "",
+    runtimeMode: "",
+    bridgePhase: "",
+    activePlayerLabel: "",
+    playerReady: false,
+    pendingCommandName: "",
+    playerWindowVisible: false,
+    playerWindowMiniaturized: false,
+    playerWindowPip: false,
+    playerWindowFrame: "",
+    playerStatusUrl: "",
+    playerVideoWidth: 0,
+    playerVideoHeight: 0,
+    playerPaused: false,
+    playerIdle: true,
   };
 }
 
@@ -458,6 +472,32 @@ export const useAppStore = create<AppStoreState>((set) => ({
         lastPlayEntryUrl: payload?.lastPlayEntryUrl
           ? payload.lastPlayEntryUrl
           : "",
+        runtimeMode: payload?.runtimeMode ? payload.runtimeMode : "",
+        bridgePhase: payload?.bridgePhase ? payload.bridgePhase : "",
+        activePlayerLabel: payload?.activePlayerLabel
+          ? payload.activePlayerLabel
+          : "",
+        playerReady: Boolean(payload?.playerReady),
+        pendingCommandName: payload?.pendingCommandName
+          ? payload.pendingCommandName
+          : "",
+        playerWindowVisible: Boolean(payload?.playerWindowVisible),
+        playerWindowMiniaturized: Boolean(payload?.playerWindowMiniaturized),
+        playerWindowPip: Boolean(payload?.playerWindowPip),
+        playerWindowFrame: payload?.playerWindowFrame
+          ? payload.playerWindowFrame
+          : "",
+        playerStatusUrl: payload?.playerStatusUrl ? payload.playerStatusUrl : "",
+        playerVideoWidth:
+          typeof payload?.playerVideoWidth === "number"
+            ? payload.playerVideoWidth
+            : 0,
+        playerVideoHeight:
+          typeof payload?.playerVideoHeight === "number"
+            ? payload.playerVideoHeight
+            : 0,
+        playerPaused: Boolean(payload?.playerPaused),
+        playerIdle: Boolean(payload?.playerIdle),
       },
     }));
   },

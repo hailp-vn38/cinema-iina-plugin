@@ -9,8 +9,10 @@
     "url": "https://github.com/hailp-vn38"
   },
   "entry": "src/runtime/index.js",
+  "globalEntry": "src/global/index.js",
   "permissions": [
-    "network-request"
+    "network-request",
+    "file-system"
   ],
   "allowedDomains": [
     "*"

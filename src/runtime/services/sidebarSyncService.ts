@@ -25,6 +25,10 @@ export function createSidebarSyncService({
 }): SidebarSyncService {
   function emit(name: string, payload: unknown): void {
     diagnosticService.recordAppMessage(name);
+    if (!runtimeStore.sidebarLoaded) {
+      return;
+    }
+
     const nextPayload =
       name === RUNTIME_EVENTS.APP_DIAGNOSTIC
         ? diagnosticService.snapshot()

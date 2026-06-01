@@ -12,6 +12,9 @@ export const DEFAULT_PROVIDER_ENDPOINTS = {
   kkphimApiBase: "https://phimapi.com",
 } as const;
 
+export const PLAY_HANDOFF_PATH = "@tmp/cinema-sources-pending-play.json";
+export const PLAY_HANDOFF_MAX_AGE_MS = 120000;
+
 export const CONTRACTS = {
   commands: UI_COMMANDS,
   events: RUNTIME_EVENTS,

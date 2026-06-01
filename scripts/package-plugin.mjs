@@ -13,6 +13,7 @@ const requiredPaths = [
   resolve(root, "Info.json"),
   resolve(root, "pref.html"),
   resolve(root, "dist/runtime/index.js"),
+  resolve(root, "dist/global/index.js"),
   resolve(root, "dist/ui/index.html"),
 ];
 
@@ -31,6 +32,8 @@ cpSync(resolve(root, "Info.json"), resolve(buildRoot, "Info.json"));
 cpSync(resolve(root, "pref.html"), resolve(buildRoot, "pref.html"));
 mkdirSync(resolve(buildRoot, "src/runtime"), { recursive: true });
 cpSync(resolve(root, "dist/runtime/index.js"), resolve(buildRoot, "src/runtime/index.js"));
+mkdirSync(resolve(buildRoot, "src/global"), { recursive: true });
+cpSync(resolve(root, "dist/global/index.js"), resolve(buildRoot, "src/global/index.js"));
 cpSync(resolve(root, "dist/ui"), resolve(buildRoot, "ui"), { recursive: true });
 
 const archiveFileName = `${pluginInfo.name}-${pluginInfo.version}.iinaplgz`;

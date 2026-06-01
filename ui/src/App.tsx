@@ -12,6 +12,7 @@ import { useSourceProvider } from "./hooks/useSourceProvider";
 import { Header } from "./components/layout/Header";
 import { CatalogView } from "./components/catalog/CatalogView";
 import { DetailView } from "./components/detail/DetailView";
+import { DiagnosticPanel } from "./components/diagnostic/DiagnosticPanel";
 
 interface HistoryCatalogItem extends CatalogItem {
   sourceLabel: string;
@@ -38,6 +39,9 @@ export default function App(): ReactElement {
   const catalog = useAppStore((state) => state.catalog);
   const detail = useAppStore((state) => state.detail.data);
   const playback = useAppStore((state) => state.playback);
+  const diagnostic = useAppStore((state) => state.diagnostic);
+  const lastEventName = useAppStore((state) => state.lastEventName);
+  const runtimeEventCount = useAppStore((state) => state.runtimeEventCount);
   const provider = useSourceProvider();
 
   const { loadHome, loadMore, loadCategory, search } = useCatalogActions();
@@ -48,10 +52,65 @@ export default function App(): ReactElement {
 
   const appShellRef = useRef<HTMLElement | null>(null);
   const lastScrollRef = useRef(0);
+  const syncedPlaybackKeyRef = useRef("");
 
   useEffect(() => {
     loadHome();
   }, [activeSourceId, loadHome]);
+
+  useEffect(() => {
+    if (diagnostic.runtimeMode !== "sidebar-runtime") {
+      return;
+    }
+
+    if (!playback.active || !playback.detailSlug || !playback.sourceId) {
+      return;
+    }
+
+    const playbackKey = [
+      playback.sourceId,
+      playback.detailSlug,
+      playback.serverId,
+      playback.episodeIndex,
+    ].join(":");
+
+    const detailMatches =
+      detail &&
+      detail.sourceId === playback.sourceId &&
+      detail.slug === playback.detailSlug;
+
+    if (detailMatches && syncedPlaybackKeyRef.current === playbackKey) {
+      return;
+    }
+
+    if (activeSourceId !== playback.sourceId) {
+      syncedPlaybackKeyRef.current = "";
+      setActiveSource(playback.sourceId);
+      return;
+    }
+
+    const matchingHistoryEntry = history.find(
+      (item) =>
+        item.sourceId === playback.sourceId &&
+        item.detailSlug === playback.detailSlug &&
+        item.serverId === playback.serverId,
+    );
+
+    syncedPlaybackKeyRef.current = playbackKey;
+    void openDetail(playback.detailSlug, matchingHistoryEntry || undefined);
+  }, [
+    activeSourceId,
+    detail,
+    diagnostic.runtimeMode,
+    history,
+    openDetail,
+    playback.active,
+    playback.detailSlug,
+    playback.episodeIndex,
+    playback.serverId,
+    playback.sourceId,
+    setActiveSource,
+  ]);
 
   const catalogItems: Array<CatalogItem | HistoryCatalogItem> =
     catalog.mode === "history"
@@ -156,6 +215,16 @@ export default function App(): ReactElement {
             onClearHistory={clearHistory}
           />
         )}
+
+        <DiagnosticPanel
+          diagnostic={diagnostic}
+          status={status}
+          message={message}
+          view={view}
+          lastEventName={lastEventName}
+          runtimeEventCount={runtimeEventCount}
+          playback={playback}
+        />
       </section>
     </main>
   );

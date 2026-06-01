@@ -47,6 +47,26 @@ export function createPlaybackService({
   playbackStateService: PlaybackStateService;
   diagnosticService: DiagnosticService;
 }): PlaybackService {
+  function ensurePlayerWindowVisible(): void {
+    try {
+      const windowApi = core?.window;
+      if (!windowApi) {
+        return;
+      }
+
+      try {
+        windowApi.miniaturized = false;
+      } catch {}
+
+      try {
+        windowApi.pip = false;
+      } catch {}
+    } catch (error) {
+      diagnosticService.recordError("ensurePlayerWindowVisible failed", error);
+      return;
+    }
+  }
+
   function setMediaTitle(title: string, episodeName: string): void {
     const parts = [title, episodeName].filter(Boolean);
     if (!parts.length) {
@@ -113,6 +133,80 @@ export function createPlaybackService({
   }
 
   return {
+    bootstrapEpisode(payload: PlayEpisodeCommand) {
+      const entries = normalizeEntries(payload);
+      const episodeIndex =
+        typeof payload.episodeIndex === "number" ? payload.episodeIndex : 0;
+      const currentEntry = entries[episodeIndex] || entries[0];
+
+      setMediaTitle(payload.title || "", currentEntry.name || "");
+      playbackStore.setContext({
+        sourceId: payload.sourceId || "",
+        movieId: payload.movieId || "",
+        detailSlug: payload.detailSlug || "",
+        title: payload.title || "",
+        episodeName: currentEntry.name || "",
+        episodeIndex,
+        serverId: payload.serverId || "",
+        url: currentEntry.url,
+        entries,
+        playlistToOriginalIndexes: [episodeIndex],
+      });
+
+      playbackStateService.syncNow();
+      runtimeStore.setState(
+        "ready",
+        "Dang phat: " + (payload.episodeName || currentEntry.name || "episode"),
+      );
+      ensurePlayerWindowVisible();
+      sidebarSyncService.syncAll();
+      sidebar.hide();
+    },
+    bootstrapPlaylist(payload: PlayAllCommand) {
+      const entries = normalizeEntries(payload);
+      const startEpisodeIndex =
+        typeof payload.startEpisodeIndex === "number"
+          ? payload.startEpisodeIndex
+          : 0;
+      const safeStartIndex =
+        startEpisodeIndex >= 0 && startEpisodeIndex < entries.length
+          ? startEpisodeIndex
+          : 0;
+      const currentEntry = entries[safeStartIndex] || entries[0];
+      const mapping = [safeStartIndex];
+
+      setMediaTitle(payload.title || "", currentEntry.name || "");
+
+      for (let index = 0; index < entries.length; index += 1) {
+        if (index === safeStartIndex) {
+          continue;
+        }
+        mpv.command("loadfile", [entries[index].url, "append"]);
+        mapping.push(index);
+      }
+
+      playbackStore.setContext({
+        sourceId: payload.sourceId || "",
+        movieId: payload.movieId || "",
+        detailSlug: payload.detailSlug || "",
+        title: payload.title || "",
+        episodeName: currentEntry.name || "",
+        episodeIndex: safeStartIndex,
+        serverId: payload.serverId || "",
+        url: currentEntry.url,
+        entries,
+        playlistToOriginalIndexes: mapping,
+      });
+
+      playbackStateService.syncNow();
+      runtimeStore.setState(
+        "ready",
+        "Dang phat va da them " + entries.length + " tap.",
+      );
+      ensurePlayerWindowVisible();
+      sidebarSyncService.syncAll();
+      sidebar.hide();
+    },
     playEpisode(payload: PlayEpisodeCommand) {
       const entries = normalizeEntries(payload);
       const episodeIndex =
@@ -149,6 +243,7 @@ export function createPlaybackService({
         "ready",
         "Dang phat: " + (payload.episodeName || "episode"),
       );
+      ensurePlayerWindowVisible();
       sidebarSyncService.syncAll();
       sidebar.hide();
     },
@@ -190,6 +285,7 @@ export function createPlaybackService({
         "ready",
         "Dang phat va da them " + entries.length + " tap.",
       );
+      ensurePlayerWindowVisible();
       sidebarSyncService.syncAll();
       sidebar.hide();
     },

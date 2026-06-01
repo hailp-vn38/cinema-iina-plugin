@@ -62,7 +62,9 @@ export function DiagnosticPanel({
   }
 
   const snapshot = useMemo(
-    () => ({
+    () => {
+      const bridge = iinaClient.inspect();
+      return {
       status,
       message,
       view,
@@ -79,6 +81,26 @@ export function DiagnosticPanel({
       lastPlayMode: diagnostic.lastPlayMode || "",
       lastPlayTitle: diagnostic.lastPlayTitle || "",
       lastPlayEntryUrl: diagnostic.lastPlayEntryUrl || "",
+      runtimeMode: diagnostic.runtimeMode || "",
+      bridgePhase: diagnostic.bridgePhase || "",
+      activePlayerLabel: diagnostic.activePlayerLabel || "",
+      playerReady: Boolean(diagnostic.playerReady),
+      pendingCommandName: diagnostic.pendingCommandName || "",
+      playerWindowVisible: Boolean(diagnostic.playerWindowVisible),
+      playerWindowMiniaturized: Boolean(diagnostic.playerWindowMiniaturized),
+      playerWindowPip: Boolean(diagnostic.playerWindowPip),
+      playerWindowFrame: diagnostic.playerWindowFrame || "",
+      playerStatusUrl: diagnostic.playerStatusUrl || "",
+      playerVideoWidth:
+        typeof diagnostic.playerVideoWidth === "number"
+          ? diagnostic.playerVideoWidth
+          : 0,
+      playerVideoHeight:
+        typeof diagnostic.playerVideoHeight === "number"
+          ? diagnostic.playerVideoHeight
+          : 0,
+      playerPaused: Boolean(diagnostic.playerPaused),
+      playerIdle: Boolean(diagnostic.playerIdle),
       pendingPlayId: playback.pendingRequestId || "",
       playback: {
         active: Boolean(playback.active),
@@ -89,7 +111,12 @@ export function DiagnosticPanel({
         url: playback.url || "",
       },
       lastError: diagnostic.lastError || "",
-    }),
+      bridgeSource: bridge.source,
+      hasGlobalIdentifier: bridge.hasGlobalIdentifier,
+      hasGlobalThisIina: bridge.hasGlobalThisIina,
+      hasWindowIina: bridge.hasWindowIina,
+    };
+    },
     [
       diagnostic,
       lastEventName,
@@ -129,6 +156,24 @@ export function DiagnosticPanel({
     ["lastPlayMode", snapshot.lastPlayMode],
     ["lastPlayTitle", snapshot.lastPlayTitle],
     ["lastPlayEntryUrl", snapshot.lastPlayEntryUrl],
+    ["runtimeMode", snapshot.runtimeMode],
+    ["bridgePhase", snapshot.bridgePhase],
+    ["activePlayerLabel", snapshot.activePlayerLabel],
+    ["playerReady", snapshot.playerReady ? "yes" : "no"],
+    ["pendingCommandName", snapshot.pendingCommandName],
+    ["playerWindowVisible", snapshot.playerWindowVisible ? "yes" : "no"],
+    ["playerWindowMiniaturized", snapshot.playerWindowMiniaturized ? "yes" : "no"],
+    ["playerWindowPip", snapshot.playerWindowPip ? "yes" : "no"],
+    ["playerWindowFrame", snapshot.playerWindowFrame],
+    ["playerStatusUrl", snapshot.playerStatusUrl],
+    ["playerVideoWidth", String(snapshot.playerVideoWidth)],
+    ["playerVideoHeight", String(snapshot.playerVideoHeight)],
+    ["playerPaused", snapshot.playerPaused ? "yes" : "no"],
+    ["playerIdle", snapshot.playerIdle ? "yes" : "no"],
+    ["bridgeSource", snapshot.bridgeSource],
+    ["hasGlobalIdentifier", snapshot.hasGlobalIdentifier ? "yes" : "no"],
+    ["hasGlobalThisIina", snapshot.hasGlobalThisIina ? "yes" : "no"],
+    ["hasWindowIina", snapshot.hasWindowIina ? "yes" : "no"],
     ["pendingPlayId", snapshot.pendingPlayId],
     ["playback.active", snapshot.playback.active ? "yes" : "no"],
     ["playback.detailSlug", snapshot.playback.detailSlug],

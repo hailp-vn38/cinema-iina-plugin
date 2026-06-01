@@ -7,7 +7,8 @@
     "dev": "vite --config vite.config.mjs",
     "build:ui": "node scripts/build-ui-inline.mjs",
     "build:runtime": "node scripts/build-runtime.mjs",
-    "package": "npm run build:ui && npm run build:runtime && node scripts/package-plugin.mjs",
+    "build:global": "node scripts/build-global.mjs",
+    "package": "npm run build:ui && npm run build:runtime && npm run build:global && node scripts/package-plugin.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

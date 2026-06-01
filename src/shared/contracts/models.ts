@@ -134,6 +134,20 @@ export interface AppDiagnosticPayload {
   lastPlayMode?: string;
   lastPlayTitle?: string;
   lastPlayEntryUrl?: string;
+  runtimeMode?: string;
+  bridgePhase?: string;
+  activePlayerLabel?: string;
+  playerReady?: boolean;
+  pendingCommandName?: string;
+  playerWindowVisible?: boolean;
+  playerWindowMiniaturized?: boolean;
+  playerWindowPip?: boolean;
+  playerWindowFrame?: string;
+  playerStatusUrl?: string;
+  playerVideoWidth?: number;
+  playerVideoHeight?: number;
+  playerPaused?: boolean;
+  playerIdle?: boolean;
 }
 
 export interface AppConfigPayload {

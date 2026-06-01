@@ -92,9 +92,13 @@ export interface PlaybackStateService {
   syncNow: () => void;
 }
 
+export interface RuntimePlaybackSnapshot extends AppPlaybackStatePayload {}
+
 export interface PlaybackService {
   playEpisode: (payload: PlayEpisodeCommand) => void;
   playAll: (payload: PlayAllCommand) => void;
+  bootstrapEpisode: (payload: PlayEpisodeCommand) => void;
+  bootstrapPlaylist: (payload: PlayAllCommand) => void;
 }
 
 export interface IinaSidebar {
