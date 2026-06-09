@@ -2,18 +2,18 @@ import { useEffect, useRef } from "react";
 import type { ReactElement } from "react";
 import type { CatalogItem, ProviderCategory } from "@shared/contracts/models";
 import { useAppStore } from "./store/appStore";
-import type { HistoryEntry } from "./store/types";
+import type { FavoriteEntry } from "./store/types";
 import { useRuntimeBridge } from "./hooks/useRuntimeBridge";
 import { useCatalogActions } from "./hooks/useCatalogActions";
 import { useDetailActions } from "./hooks/useDetailActions";
-import { useHistoryActions } from "./hooks/useHistoryActions";
-import { useHistoryPersistence } from "./hooks/useHistoryPersistence";
+import { useFavoriteActions } from "./hooks/useFavoriteActions";
+import { useFavoritePersistence } from "./hooks/useFavoritePersistence";
 import { useSourceProvider } from "./hooks/useSourceProvider";
 import { Header } from "./components/layout/Header";
 import { CatalogView } from "./components/catalog/CatalogView";
 import { DetailView } from "./components/detail/DetailView";
 
-interface HistoryCatalogItem extends CatalogItem {
+interface FavoriteCatalogItem extends CatalogItem {
   sourceLabel: string;
   serverId: string;
   serverName: string;
@@ -21,15 +21,15 @@ interface HistoryCatalogItem extends CatalogItem {
   updatedAtLabel: string;
   episodeIndex: number;
   episodeName: string;
-  entries: HistoryEntry["entries"];
+  entries: FavoriteEntry["entries"];
 }
 
 export default function App(): ReactElement {
   useRuntimeBridge();
-  useHistoryPersistence();
+  useFavoritePersistence();
 
   const sources = useAppStore((state) => state.sources);
-  const history = useAppStore((state) => state.history);
+  const favorites = useAppStore((state) => state.favorites);
   const activeSourceId = useAppStore((state) => state.activeSourceId);
   const setActiveSource = useAppStore((state) => state.setActiveSource);
   const status = useAppStore((state) => state.status);
@@ -44,10 +44,16 @@ export default function App(): ReactElement {
   const provider = useSourceProvider();
 
   const { loadHome, loadMore, loadCategory, search } = useCatalogActions();
-  const { openDetail, closeDetail, selectServer, playEpisode, playAll } =
-    useDetailActions();
-  const { restoreHistoryEntry, removeHistory, clearHistory } =
-    useHistoryActions();
+  const {
+    openDetail,
+    closeDetail,
+    selectServer,
+    playEpisode,
+    playAll,
+    toggleFavorite,
+  } = useDetailActions();
+  const { restoreFavoriteEntry, removeFavorite, clearFavorites } =
+    useFavoriteActions();
 
   const appShellRef = useRef<HTMLElement | null>(null);
   const lastScrollRef = useRef(0);
@@ -88,20 +94,19 @@ export default function App(): ReactElement {
       return;
     }
 
-    const matchingHistoryEntry = history.find(
+    const matchingFavoriteEntry = favorites.find(
       (item) =>
         item.sourceId === playback.sourceId &&
-        item.detailSlug === playback.detailSlug &&
-        item.serverId === playback.serverId,
+        item.detailSlug === playback.detailSlug,
     );
 
     syncedPlaybackKeyRef.current = playbackKey;
-    void openDetail(playback.detailSlug, matchingHistoryEntry || undefined);
+    void openDetail(playback.detailSlug, matchingFavoriteEntry || undefined);
   }, [
     activeSourceId,
     detail,
     diagnostic.runtimeMode,
-    history,
+    favorites,
     openDetail,
     playback.active,
     playback.detailSlug,
@@ -111,9 +116,9 @@ export default function App(): ReactElement {
     setActiveSource,
   ]);
 
-  const catalogItems: Array<CatalogItem | HistoryCatalogItem> =
-    catalog.mode === "history"
-        ? history.map((item) => ({
+  const catalogItems: Array<CatalogItem | FavoriteCatalogItem> =
+    catalog.mode === "favorites"
+        ? favorites.map((item) => ({
           id: item.id,
           sourceId: item.sourceId,
           movieId: item.movieId,
@@ -132,12 +137,19 @@ export default function App(): ReactElement {
           serverId: item.serverId,
           serverName: item.serverName,
           updatedAt: item.updatedAt,
-          updatedAtLabel: "Đã lưu",
+          updatedAtLabel: "Yêu thích",
           episodeIndex: item.episodeIndex,
           episodeName: item.episodeName,
           entries: item.entries,
         }))
       : catalog.items;
+
+  const isDetailFavorite = Boolean(
+    detail &&
+      favorites.some(
+        (item) => item.sourceId === detail.sourceId && item.detailSlug === detail.slug,
+      ),
+  );
 
   const headerCategories: ProviderCategory[] =
     catalog.categories && catalog.categories.length
@@ -193,10 +205,12 @@ export default function App(): ReactElement {
           <DetailView
             detail={detail}
             playback={playback}
+            isFavorite={isDetailFavorite}
             onBack={closeDetail}
             onSelectServer={selectServer}
             onPlayEpisode={playEpisode}
             onPlayAll={playAll}
+            onToggleFavorite={toggleFavorite}
           />
         ) : (
           <CatalogView
@@ -209,9 +223,9 @@ export default function App(): ReactElement {
             onLoadMore={loadMore}
             onOpenDetail={openDetail}
             isLoading={status === "loading"}
-            onRestoreHistory={restoreHistoryEntry}
-            onRemoveHistory={removeHistory}
-            onClearHistory={clearHistory}
+            onRestoreFavorite={restoreFavoriteEntry}
+            onRemoveFavorite={removeFavorite}
+            onClearFavorites={clearFavorites}
           />
         )}
 

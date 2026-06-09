@@ -18,7 +18,7 @@ export interface SourceOption {
   enabled: boolean;
 }
 
-export interface HistoryEntry {
+export interface FavoriteEntry {
   id: string;
   sourceId: string;
   movieId: string;
@@ -60,7 +60,7 @@ export interface DiagnosticState extends AppDiagnosticPayload {
   lastOutboundCommand: string;
 }
 
-export interface HistoryEntryInput {
+export interface FavoriteEntryInput {
   sourceId?: string;
   movieId?: string;
   detailSlug?: string;
@@ -87,16 +87,17 @@ export interface AppStoreState {
   catalog: CatalogState;
   detail: DetailState;
   playback: PlaybackState;
-  history: HistoryEntry[];
+  favorites: FavoriteEntry[];
   diagnostic: DiagnosticState;
   config: AppConfigPayload;
   setActiveSource: (sourceId: string) => void;
   setStatus: (status: string, message?: string) => void;
-  hydrateHistory: (entries: HistoryEntry[]) => void;
-  rememberHistoryEntry: (payload: HistoryEntryInput) => void;
-  removeHistoryEntry: (entryId: string) => void;
-  clearHistory: () => void;
-  showHistoryCatalog: () => void;
+  hydrateFavorites: (entries: FavoriteEntry[]) => void;
+  toggleFavoriteEntry: (payload: FavoriteEntryInput) => void;
+  updateFavoriteProgress: (payload: FavoriteEntryInput) => void;
+  removeFavoriteEntry: (entryId: string) => void;
+  clearFavorites: () => void;
+  showFavoritesCatalog: () => void;
   setCatalogLoading: (message: string) => void;
   setCatalogError: (message: string) => void;
   applyCatalogPayload: (payload: CatalogPayload, sourceId: string) => void;

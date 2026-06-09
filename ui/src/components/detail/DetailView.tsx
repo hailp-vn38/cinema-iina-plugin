@@ -25,6 +25,8 @@ interface DetailViewProps {
   onSelectServer: (index: number) => void;
   onPlayEpisode: (episodeIndex: number) => void;
   onPlayAll: (startEpisodeIndex?: number) => void;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
 }
 
 export function DetailView({
@@ -34,6 +36,8 @@ export function DetailView({
   onSelectServer,
   onPlayEpisode,
   onPlayAll,
+  isFavorite,
+  onToggleFavorite,
 }: DetailViewProps): ReactElement {
   const servers: ProviderServer[] = Array.isArray(detail.servers)
     ? detail.servers
@@ -62,13 +66,28 @@ export function DetailView({
           <button className="ghost-button" type="button" onClick={onBack}>
             Quay lại
           </button>
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() => onPlayAll(0)}
-          >
-            Play all
-          </button>
+          <div className="detail-toolbar-actions">
+            <button
+              className={
+                isFavorite
+                  ? "favorite-button is-active"
+                  : "favorite-button"
+              }
+              type="button"
+              aria-label={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+              title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+              onClick={onToggleFavorite}
+            >
+              {isFavorite ? "♥" : "♡"}
+            </button>
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() => onPlayAll(0)}
+            >
+              Play all
+            </button>
+          </div>
         </div>
 
         <div className="detail-hero">
@@ -143,13 +162,13 @@ export function DetailView({
           <div className="episode-grid">
             {activeEntries.map((entry, index) => {
               const isCurrent = isCurrentDetail && playback.episodeIndex === index;
-              const isHistoryCurrent =
+              const isFavoriteProgressCurrent =
                 !isCurrentDetail && lastKnownEpisodeIndex === index;
               return (
                 <button
                   key={entry.slug || entry.name || index}
                   className={
-                    isCurrent || isHistoryCurrent
+                    isCurrent || isFavoriteProgressCurrent
                       ? "episode-button is-current"
                       : "episode-button"
                   }

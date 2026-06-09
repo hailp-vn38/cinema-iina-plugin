@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useSourceProvider } from "./useSourceProvider";
-import { HISTORY_CATEGORY_SLUG, useAppStore } from "../store/appStore";
+import { FAVORITES_CATEGORY_SLUG, useAppStore } from "../store/appStore";
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown provider error";
@@ -8,7 +8,7 @@ function toErrorMessage(error: unknown): string {
 
 export interface CatalogActions {
   loadHome: () => Promise<void>;
-  loadHistory: () => void;
+  loadFavorites: () => void;
   loadCategory: (slug: string) => Promise<void>;
   loadMore: () => Promise<void>;
   search: (keyword: string) => Promise<void>;
@@ -32,20 +32,20 @@ export function useCatalogActions(): CatalogActions {
   );
   const setCatalogLoading = useAppStore((state) => state.setCatalogLoading);
   const setCatalogError = useAppStore((state) => state.setCatalogError);
-  const showHistoryCatalog = useAppStore((state) => state.showHistoryCatalog);
+  const showFavoritesCatalog = useAppStore((state) => state.showFavoritesCatalog);
 
-  const loadHistory = useCallback((): void => {
-    showHistoryCatalog();
-  }, [showHistoryCatalog]);
+  const loadFavorites = useCallback((): void => {
+    showFavoritesCatalog();
+  }, [showFavoritesCatalog]);
 
   const loadHome = useCallback(async (): Promise<void> => {
-    loadHistory();
-  }, [loadHistory]);
+    loadFavorites();
+  }, [loadFavorites]);
 
   const loadCategory = useCallback(
     async (slug: string): Promise<void> => {
-      if (slug === HISTORY_CATEGORY_SLUG) {
-        loadHistory();
+      if (slug === FAVORITES_CATEGORY_SLUG) {
+        loadFavorites();
         return;
       }
 
@@ -68,12 +68,12 @@ export function useCatalogActions(): CatalogActions {
       provider,
       setCatalogError,
       setCatalogLoading,
-      loadHistory,
+      loadFavorites,
     ],
   );
 
   const loadMore = useCallback(async (): Promise<void> => {
-    if (catalogMode === "history" || activeCategory === HISTORY_CATEGORY_SLUG) {
+    if (catalogMode === "favorites" || activeCategory === FAVORITES_CATEGORY_SLUG) {
       return;
     }
 
@@ -136,7 +136,7 @@ export function useCatalogActions(): CatalogActions {
     async (keyword: string): Promise<void> => {
       const trimmedKeyword = String(keyword || "").trim();
       if (!trimmedKeyword) {
-        loadHistory();
+        loadFavorites();
         return;
       }
 
@@ -156,7 +156,7 @@ export function useCatalogActions(): CatalogActions {
     [
       activeSourceId,
       applyCatalogPayload,
-      loadHistory,
+      loadFavorites,
       provider,
       setCatalogError,
       setCatalogLoading,
@@ -165,7 +165,7 @@ export function useCatalogActions(): CatalogActions {
 
   return {
     loadHome,
-    loadHistory,
+    loadFavorites,
     loadCategory,
     loadMore,
     search,

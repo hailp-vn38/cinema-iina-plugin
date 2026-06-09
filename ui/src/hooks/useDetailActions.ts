@@ -9,7 +9,7 @@ import { UI_COMMANDS } from "@shared/contracts/commands";
 import { iinaClient } from "../bridge/iinaClient";
 import { useSourceProvider } from "./useSourceProvider";
 import { useAppStore } from "../store/appStore";
-import type { HistoryEntry } from "../store/types";
+import type { FavoriteEntry, FavoriteEntryInput } from "../store/types";
 
 function createRequestId(prefix: string): string {
   return (
@@ -25,8 +25,8 @@ function toErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-export interface OpenDetailOptions extends Partial<HistoryEntry> {
-  historyEntry?: HistoryEntry;
+export interface OpenDetailOptions extends Partial<FavoriteEntry> {
+  favoriteEntry?: FavoriteEntry;
 }
 
 export interface DetailActions {
@@ -35,11 +35,21 @@ export interface DetailActions {
   selectServer: (index: number) => void;
   playEpisode: (episodeIndex: number) => void;
   playAll: (startEpisodeIndex?: number) => void;
+  toggleFavorite: () => void;
+}
+
+function toFavoriteEntryId(payload: Pick<FavoriteEntryInput, "sourceId" | "detailSlug">): string {
+  return [
+    payload.sourceId ? payload.sourceId : "",
+    payload.detailSlug ? payload.detailSlug : "",
+  ].join(":");
 }
 
 export function useDetailActions(): DetailActions {
   const provider = useSourceProvider();
   const detail = useAppStore((state) => state.detail.data);
+  const favorites = useAppStore((state) => state.favorites);
+  const playback = useAppStore((state) => state.playback);
   const setStatus = useAppStore((state) => state.setStatus);
   const setDetailLoading = useAppStore((state) => state.setDetailLoading);
   const setDetailError = useAppStore((state) => state.setDetailError);
@@ -52,8 +62,11 @@ export function useDetailActions(): DetailActions {
   const recordOutboundCommand = useAppStore(
     (state) => state.recordOutboundCommand,
   );
-  const rememberHistoryEntry = useAppStore(
-    (state) => state.rememberHistoryEntry,
+  const toggleFavoriteEntry = useAppStore(
+    (state) => state.toggleFavoriteEntry,
+  );
+  const updateFavoriteProgress = useAppStore(
+    (state) => state.updateFavoriteProgress,
   );
 
   const openDetail = useCallback(
@@ -66,23 +79,28 @@ export function useDetailActions(): DetailActions {
       setDetailLoading("Đang lấy thông tin phim...");
       try {
         const payload = await provider.getDetail(slug);
-        const historyEntry =
-          options.historyEntry
-            ? options.historyEntry
+        const matchedFavoriteEntry =
+          options.favoriteEntry
+            ? options.favoriteEntry
             : options.entries
-              ? (options as HistoryEntry)
-              : null;
+              ? (options as FavoriteEntry)
+              : favorites.find(
+                  (item) =>
+                    item.sourceId === payload.sourceId &&
+                    item.detailSlug === payload.slug,
+                ) || null;
         let nextPayload: ProviderDetail = payload;
 
-        if (historyEntry) {
+        if (matchedFavoriteEntry) {
           const servers: ProviderServer[] = Array.isArray(payload.servers)
             ? payload.servers
             : [];
           const matchedServerIndex = servers.findIndex(
             (server) =>
-              (historyEntry.serverId && server.id === historyEntry.serverId) ||
-              (historyEntry.serverName &&
-                server.name === historyEntry.serverName),
+              (matchedFavoriteEntry.serverId &&
+                server.id === matchedFavoriteEntry.serverId) ||
+              (matchedFavoriteEntry.serverName &&
+                server.name === matchedFavoriteEntry.serverName),
           );
           const activeServerIndex =
             matchedServerIndex >= 0
@@ -98,11 +116,11 @@ export function useDetailActions(): DetailActions {
                 ? activeServer.entries
                 : payload.entries,
             historyEpisodeIndex:
-              typeof historyEntry.episodeIndex === "number"
-                ? historyEntry.episodeIndex
+              typeof matchedFavoriteEntry.episodeIndex === "number"
+                ? matchedFavoriteEntry.episodeIndex
                 : -1,
-            historyEpisodeName: historyEntry.episodeName || "",
-            historyServerId: historyEntry.serverId || "",
+            historyEpisodeName: matchedFavoriteEntry.episodeName || "",
+            historyServerId: matchedFavoriteEntry.serverId || "",
           };
         }
         applyDetailPayload(nextPayload);
@@ -110,7 +128,7 @@ export function useDetailActions(): DetailActions {
         setDetailError(toErrorMessage(error, "Unknown provider error"));
       }
     },
-    [applyDetailPayload, provider, setDetailError, setDetailLoading],
+    [applyDetailPayload, favorites, provider, setDetailError, setDetailLoading],
   );
 
   const playEpisode = useCallback(
@@ -126,7 +144,7 @@ export function useDetailActions(): DetailActions {
           mode: "single",
           episodeIndex,
         }) as PlayEpisodeCommand;
-        rememberHistoryEntry({
+        updateFavoriteProgress({
           sourceId: detail.sourceId,
           movieId: detail.movieId,
           detailSlug: detail.slug,
@@ -154,9 +172,9 @@ export function useDetailActions(): DetailActions {
       detail,
       provider,
       recordOutboundCommand,
-      rememberHistoryEntry,
       setPendingPlayRequest,
       setStatus,
+      updateFavoriteProgress,
     ],
   );
 
@@ -173,7 +191,7 @@ export function useDetailActions(): DetailActions {
           mode: "all",
           startEpisodeIndex,
         }) as PlayAllCommand;
-        rememberHistoryEntry({
+        updateFavoriteProgress({
           sourceId: detail.sourceId,
           movieId: detail.movieId,
           detailSlug: detail.slug,
@@ -209,11 +227,62 @@ export function useDetailActions(): DetailActions {
       detail,
       provider,
       recordOutboundCommand,
-      rememberHistoryEntry,
       setPendingPlayRequest,
       setStatus,
+      updateFavoriteProgress,
     ],
   );
+
+  const toggleFavorite = useCallback((): void => {
+    if (!detail) {
+      setStatus("error", "Chưa có dữ liệu phim để lưu yêu thích.");
+      return;
+    }
+
+    const servers: ProviderServer[] = Array.isArray(detail.servers)
+      ? detail.servers
+      : [];
+    const activeServerIndex =
+      typeof detail.activeServerIndex === "number" ? detail.activeServerIndex : 0;
+    const activeServer = servers[activeServerIndex] || null;
+    const entries =
+      activeServer && Array.isArray(activeServer.entries)
+        ? activeServer.entries
+        : Array.isArray(detail.entries)
+          ? detail.entries
+          : [];
+    const favoriteId = toFavoriteEntryId({
+      sourceId: detail.sourceId,
+      detailSlug: detail.slug,
+    });
+    const existingFavorite = favorites.find((item) => item.id === favoriteId);
+    const isCurrentPlayback =
+      playback.active &&
+      playback.sourceId === detail.sourceId &&
+      playback.detailSlug === detail.slug;
+    const episodeIndex = isCurrentPlayback
+      ? playback.episodeIndex
+      : typeof existingFavorite?.episodeIndex === "number"
+        ? existingFavorite.episodeIndex
+        : 0;
+
+    toggleFavoriteEntry({
+      sourceId: detail.sourceId,
+      movieId: detail.movieId,
+      detailSlug: detail.slug,
+      title: detail.title,
+      originName: detail.originName,
+      posterUrl: detail.posterUrl,
+      serverId: (activeServer && activeServer.id) || detail.historyServerId || "",
+      serverName: (activeServer && activeServer.name) || detail.serverName,
+      entries,
+      episodeIndex,
+      episodeName:
+        isCurrentPlayback && playback.episodeName
+          ? playback.episodeName
+          : existingFavorite?.episodeName || entries[episodeIndex]?.name || "",
+    });
+  }, [detail, favorites, playback, setStatus, toggleFavoriteEntry]);
 
   return {
     openDetail,
@@ -221,5 +290,6 @@ export function useDetailActions(): DetailActions {
     selectServer: selectDetailServer,
     playEpisode,
     playAll,
+    toggleFavorite,
   };
 }

@@ -15,8 +15,8 @@ import type {
   CatalogState,
   DetailState,
   DiagnosticState,
-  HistoryEntry,
-  HistoryEntryInput,
+  FavoriteEntry,
+  FavoriteEntryInput,
   PlaybackState,
   SourceOption,
 } from "./types";
@@ -27,17 +27,17 @@ const DEFAULT_SOURCES: SourceOption[] = [
   { id: "kkphim", label: "KKPhim", enabled: true },
 ];
 
-export const HISTORY_CATEGORY_SLUG = "__history__";
+export const FAVORITES_CATEGORY_SLUG = "__favorites__";
 
 function createInitialCatalog(sourceId = "ophim"): CatalogState {
   return {
     sourceId,
-    mode: "history",
-    title: "Lịch sử xem",
-    subtitle: "Các playlist gần đây",
+    mode: "favorites",
+    title: "Yêu thích",
+    subtitle: "Phim đã lưu và tập xem gần nhất",
     items: [],
     categories: [],
-    activeCategory: HISTORY_CATEGORY_SLUG,
+    activeCategory: FAVORITES_CATEGORY_SLUG,
     keyword: "",
     error: "",
     pagination: {
@@ -101,11 +101,10 @@ function createInitialDiagnostic(): DiagnosticState {
   };
 }
 
-function toHistoryEntryId(payload: HistoryEntryInput): string {
+function toFavoriteEntryId(payload: FavoriteEntryInput): string {
   return [
     payload.sourceId ? payload.sourceId : "",
     payload.detailSlug ? payload.detailSlug : "",
-    payload.serverId ? payload.serverId : "",
   ].join(":");
 }
 
@@ -131,7 +130,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
   catalog: createInitialCatalog("ophim"),
   detail: createInitialDetail(),
   playback: createInitialPlayback(),
-  history: [],
+  favorites: [],
   diagnostic: createInitialDiagnostic(),
   config: {
     ...DEFAULT_PROVIDER_ENDPOINTS,
@@ -141,7 +140,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
       activeSourceId: sourceId,
       view: "catalog",
       status: "loading",
-      message: "Đang mở lịch sử...",
+      message: "Đang mở yêu thích...",
       catalog: createInitialCatalog(sourceId),
       detail: createInitialDetail(),
       playback: { ...createInitialPlayback() },
@@ -153,24 +152,51 @@ export const useAppStore = create<AppStoreState>((set) => ({
       message,
     });
   },
-  hydrateHistory(entries: HistoryEntry[]) {
+  hydrateFavorites(entries: FavoriteEntry[]) {
+    const normalizedFavorites = Array.isArray(entries)
+      ? entries.reduce<FavoriteEntry[]>((accumulator, item) => {
+          if (!item) {
+            return accumulator;
+          }
+
+          const entry = {
+            ...item,
+            id: toFavoriteEntryId(item),
+          };
+          if (accumulator.some((favorite) => favorite.id === entry.id)) {
+            return accumulator;
+          }
+
+          return accumulator.concat(entry);
+        }, [])
+      : [];
+
     set((state) => ({
-      history: Array.isArray(entries) ? entries.slice(0, 12) : [],
+      favorites: normalizedFavorites.slice(0, 100),
       catalog:
-        state.catalog.activeCategory === HISTORY_CATEGORY_SLUG
+        state.catalog.activeCategory === FAVORITES_CATEGORY_SLUG
           ? {
               ...state.catalog,
-              mode: "history",
-              title: "Lịch sử xem",
-              subtitle: "Các playlist gần đây",
+              mode: "favorites",
+              title: "Yêu thích",
+              subtitle: "Phim đã lưu và tập xem gần nhất",
             }
           : state.catalog,
     }));
   },
-  rememberHistoryEntry(payload: HistoryEntryInput) {
+  toggleFavoriteEntry(payload: FavoriteEntryInput) {
     set((state) => {
-      const entry: HistoryEntry = {
-        id: toHistoryEntryId(payload),
+      const entryId = toFavoriteEntryId(payload);
+      const existing = (state.favorites || []).find((item) => item.id === entryId);
+
+      if (existing) {
+        return {
+          favorites: (state.favorites || []).filter((item) => item.id !== entryId),
+        };
+      }
+
+      const entry: FavoriteEntry = {
+        id: entryId,
         sourceId: payload.sourceId ? String(payload.sourceId) : "",
         movieId: payload.movieId ? String(payload.movieId) : "",
         detailSlug: payload.detailSlug ? String(payload.detailSlug) : "",
@@ -191,35 +217,70 @@ export const useAppStore = create<AppStoreState>((set) => ({
       };
 
       return {
-        history: [entry]
-          .concat((state.history || []).filter((item) => item.id !== entry.id))
-          .slice(0, 12),
+        favorites: [entry].concat(
+          (state.favorites || []).filter((item) => item.id !== entry.id),
+        ),
       };
     });
   },
-  removeHistoryEntry(entryId: string) {
-    set((state) => ({
-      history: (state.history || []).filter((item) => item.id !== entryId),
-    }));
-  },
-  clearHistory() {
-    set({
-      history: [],
+  updateFavoriteProgress(payload: FavoriteEntryInput) {
+    set((state) => {
+      const entryId = toFavoriteEntryId(payload);
+      let didUpdate = false;
+      const favorites = (state.favorites || []).map((item) => {
+        if (item.id !== entryId) {
+          return item;
+        }
+
+        didUpdate = true;
+        return {
+          ...item,
+          movieId: payload.movieId ? String(payload.movieId) : item.movieId,
+          title: payload.title ? String(payload.title) : item.title,
+          originName: payload.originName ? String(payload.originName) : item.originName,
+          posterUrl: payload.posterUrl ? String(payload.posterUrl) : item.posterUrl,
+          serverId: payload.serverId ? String(payload.serverId) : item.serverId,
+          serverName: payload.serverName ? String(payload.serverName) : item.serverName,
+          entries: payload.entries ? normalizeEntries(payload.entries) : item.entries,
+          episodeIndex:
+            typeof payload.episodeIndex === "number"
+              ? payload.episodeIndex
+              : typeof payload.startEpisodeIndex === "number"
+                ? payload.startEpisodeIndex
+                : item.episodeIndex,
+          episodeName: payload.episodeName
+            ? String(payload.episodeName)
+            : item.episodeName,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+
+      return didUpdate ? { favorites } : state;
     });
   },
-  showHistoryCatalog() {
+  removeFavoriteEntry(entryId: string) {
+    set((state) => ({
+      favorites: (state.favorites || []).filter((item) => item.id !== entryId),
+    }));
+  },
+  clearFavorites() {
+    set({
+      favorites: [],
+    });
+  },
+  showFavoritesCatalog() {
     set({
       view: "catalog",
       status: "ready",
-      message: "Đang xem lịch sử.",
+      message: "Đang xem yêu thích.",
       catalog: {
         sourceId: "",
-        mode: "history",
-        title: "Lịch sử xem",
-        subtitle: "Các playlist gần đây",
+        mode: "favorites",
+        title: "Yêu thích",
+        subtitle: "Phim đã lưu và tập xem gần nhất",
         items: [],
         categories: [],
-        activeCategory: HISTORY_CATEGORY_SLUG,
+        activeCategory: FAVORITES_CATEGORY_SLUG,
         keyword: "",
         error: "",
         pagination: {
@@ -415,11 +476,11 @@ export const useAppStore = create<AppStoreState>((set) => ({
         serverId: payload?.serverId ? String(payload.serverId) : "",
         url: payload?.url ? String(payload.url) : "",
       },
-      history: (state.history || []).map((item) => {
+      favorites: (state.favorites || []).map((item) => {
         const isSamePlayback =
           item.detailSlug &&
           item.detailSlug === String(payload?.detailSlug || "") &&
-          item.serverId === String(payload?.serverId || "");
+          item.sourceId === String(payload?.sourceId || "");
 
         if (!isSamePlayback) {
           return item;
@@ -427,6 +488,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
 
         return {
           ...item,
+          serverId: payload?.serverId ? String(payload.serverId) : item.serverId,
           episodeIndex:
             typeof payload?.episodeIndex === "number"
               ? payload.episodeIndex

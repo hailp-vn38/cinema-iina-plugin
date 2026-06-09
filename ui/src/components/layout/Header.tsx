@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent, ReactElement } from "react";
 import type { ProviderCategory } from "@shared/contracts/models";
 import { Dropdown } from "../common/Dropdown";
-import { HISTORY_CATEGORY_SLUG } from "../../store/appStore";
+import { FAVORITES_CATEGORY_SLUG } from "../../store/appStore";
 import type { SourceOption } from "../../store/types";
 
 interface HeaderProps {
@@ -51,7 +51,7 @@ export function Header({
   }));
 
   const safeCategories = categories || [];
-  const categoryItems = [{ slug: HISTORY_CATEGORY_SLUG, label: "Lịch sử" }].concat(
+  const categoryItems = [{ slug: FAVORITES_CATEGORY_SLUG, label: "Yêu thích" }].concat(
     safeCategories,
   );
 

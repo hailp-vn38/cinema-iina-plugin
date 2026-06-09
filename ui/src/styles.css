@@ -192,99 +192,6 @@ body {
   min-width: 108px;
 }
 
-.history-menu {
-  position: relative;
-}
-
-.history-menu-trigger {
-  min-width: 108px;
-}
-
-.history-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.history-popover {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: min(560px, calc(100vw - 24px));
-  margin-top: 4px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  box-shadow: var(--shadow-soft);
-  z-index: 10000;
-  overflow: hidden;
-}
-
-.history-table-wrap {
-  max-height: 320px;
-  overflow: auto;
-}
-
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-
-.history-table th,
-.history-table td {
-  padding: 9px 10px;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
-  vertical-align: top;
-}
-
-.history-table th {
-  position: sticky;
-  top: 0;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--ink-soft);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.history-table tr:last-child td {
-  border-bottom: 0;
-}
-
-.history-title {
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.history-subtitle {
-  margin-top: 2px;
-  color: var(--ink-soft);
-  font-size: 10px;
-}
-
-.history-actions-cell {
-  display: flex;
-  gap: 6px;
-  justify-content: flex-end;
-  white-space: nowrap;
-}
-
-.history-empty {
-  text-align: center;
-  color: var(--ink-soft);
-}
-
 .dropdown-trigger {
   display: flex;
   align-items: center;
@@ -721,7 +628,7 @@ h2 {
   font-weight: 600;
 }
 
-.catalog-history-note {
+.catalog-favorite-note {
   margin-top: 2px;
   color: var(--ink-soft);
   font-size: 10px;
@@ -915,6 +822,37 @@ h2 {
   display: flex;
   justify-content: space-between;
   gap: 8px;
+}
+
+.detail-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.favorite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.favorite-button:hover,
+.favorite-button.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .detail-hero {

@@ -6,7 +6,7 @@ import type {
 } from "react";
 import type { CatalogPagination } from "@shared/contracts/models";
 import type { OpenDetailOptions } from "../../hooks/useDetailActions";
-import type { HistoryEntry } from "../../store/types";
+import type { FavoriteEntry } from "../../store/types";
 
 interface CatalogItemView {
   id: string;
@@ -30,10 +30,10 @@ interface CatalogItemView {
   updatedAtLabel?: string;
   episodeIndex?: number;
   episodeName?: string;
-  entries?: HistoryEntry["entries"];
+  entries?: FavoriteEntry["entries"];
 }
 
-function toHistoryEntry(item: CatalogItemView): HistoryEntry {
+function toFavoriteEntry(item: CatalogItemView): FavoriteEntry {
   return {
     id: item.id,
     sourceId: item.sourceId,
@@ -68,11 +68,11 @@ function Poster({ item }: PosterProps): ReactElement {
   );
 }
 
-interface HistoryCardMenuProps {
+interface FavoriteCardMenuProps {
   onRemove: () => void;
 }
 
-function HistoryCardMenu({ onRemove }: HistoryCardMenuProps): ReactElement {
+function FavoriteCardMenu({ onRemove }: FavoriteCardMenuProps): ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -111,7 +111,7 @@ function HistoryCardMenu({ onRemove }: HistoryCardMenuProps): ReactElement {
               setIsOpen(false);
             }}
           >
-            Xóa khỏi lịch sử
+            Xóa khỏi yêu thích
           </button>
         </div>
       )}
@@ -147,9 +147,9 @@ interface CatalogViewProps {
   onLoadMore: () => void | Promise<void>;
   onOpenDetail: (slug: string, options?: OpenDetailOptions) => void | Promise<void>;
   isLoading: boolean;
-  onRestoreHistory: (entry: HistoryEntry) => void;
-  onRemoveHistory: (entryId: string) => void;
-  onClearHistory: () => void;
+  onRestoreFavorite: (entry: FavoriteEntry) => void;
+  onRemoveFavorite: (entryId: string) => void;
+  onClearFavorites: () => void;
 }
 
 export function CatalogView({
@@ -162,14 +162,14 @@ export function CatalogView({
   onLoadMore,
   onOpenDetail,
   isLoading,
-  onRestoreHistory,
-  onRemoveHistory,
-  onClearHistory,
+  onRestoreFavorite,
+  onRemoveFavorite,
+  onClearFavorites,
 }: CatalogViewProps): ReactElement {
   const panelRef = useRef<HTMLElement | null>(null);
-  const isHistoryMode = mode === "history";
+  const isFavoritesMode = mode === "favorites";
   const hasMore =
-    !isHistoryMode &&
+    !isFavoritesMode &&
     Boolean(
       pagination &&
         pagination.currentPage &&
@@ -203,20 +203,20 @@ export function CatalogView({
             <h2>{title}</h2>
             <p className="catalog-panel-subtitle">{subtitle}</p>
           </div>
-          {isHistoryMode ? (
+          {isFavoritesMode ? (
             <button
               className="ghost-button ghost-button--small"
               type="button"
-              onClick={onClearHistory}
+              onClick={onClearFavorites}
             >
-              Xóa all lịch sử
+              Xóa all yêu thích
             </button>
           ) : null}
         </div>
         <div className="empty-state">
           <p className="empty-state-message">
-            {isHistoryMode
-              ? "Chưa có lịch sử xem nào được lưu."
+            {isFavoritesMode
+              ? "Chưa có phim yêu thích nào được lưu."
               : "Không có phim nào. Hãy thử tìm kiếm hoặc đổi nguồn."}
           </p>
         </div>
@@ -231,13 +231,13 @@ export function CatalogView({
           <h2>{title}</h2>
           <p className="catalog-panel-subtitle">{subtitle}</p>
         </div>
-        {isHistoryMode ? (
+        {isFavoritesMode ? (
           <button
             className="ghost-button ghost-button--small"
             type="button"
-            onClick={onClearHistory}
+            onClick={onClearFavorites}
           >
-            Xóa all lịch sử
+            Xóa all yêu thích
           </button>
         ) : null}
       </div>
@@ -247,13 +247,13 @@ export function CatalogView({
           <article
             className="catalog-card catalog-card--interactive"
             key={item.id}
-            onClick={() => void onOpenDetail(item.slug, isHistoryMode ? (item as OpenDetailOptions) : undefined)}
+            onClick={() => void onOpenDetail(item.slug, isFavoritesMode ? (item as OpenDetailOptions) : undefined)}
             onKeyDown={(event: ReactKeyboardEvent<HTMLElement>) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
                 void onOpenDetail(
                   item.slug,
-                  isHistoryMode ? (item as OpenDetailOptions) : undefined,
+                  isFavoritesMode ? (item as OpenDetailOptions) : undefined,
                 );
               }
             }}
@@ -264,7 +264,7 @@ export function CatalogView({
             <div className="catalog-card-content">
               <div className="catalog-card-headline">
                 <h3>{item.name}</h3>
-                {isHistoryMode ? (
+                {isFavoritesMode ? (
                   <div
                     className="catalog-card-headline-actions"
                     onClick={(event: ReactMouseEvent<HTMLDivElement>) =>
@@ -274,14 +274,14 @@ export function CatalogView({
                     <button
                       className="catalog-card-icon-button"
                       type="button"
-                      aria-label="Play playlist"
-                      title="Play playlist"
-                      onClick={() => onRestoreHistory(toHistoryEntry(item))}
+                      aria-label="Play favorite playlist"
+                      title="Play favorite playlist"
+                      onClick={() => onRestoreFavorite(toFavoriteEntry(item))}
                     >
                       ▶
                     </button>
-                    <HistoryCardMenu
-                      onRemove={() => onRemoveHistory(item.id)}
+                    <FavoriteCardMenu
+                      onRemove={() => onRemoveFavorite(item.id)}
                     />
                   </div>
                 ) : null}
@@ -290,7 +290,7 @@ export function CatalogView({
                 {item.originName || "No original title"}
               </p>
               <div className="catalog-meta">
-                {(isHistoryMode
+                {(isFavoritesMode
                   ? [item.serverName, item.sourceLabel || item.sourceId, item.updatedAtLabel]
                   : [item.year, item.type, item.quality, item.lang]
                 )
@@ -300,14 +300,14 @@ export function CatalogView({
                   ))}
               </div>
               <p className="catalog-episode">
-                {isHistoryMode
+                {isFavoritesMode
                   ? item.episodeName ||
                     "Tập " + ((typeof item.episodeIndex === "number" ? item.episodeIndex : 0) + 1)
                   : item.episodeCurrent || "No episode info"}
               </p>
-              {isHistoryMode ? (
-                <p className="catalog-history-note">
-                  Xem gần nhất: {formatUpdatedAt(item.updatedAt)}
+              {isFavoritesMode ? (
+                <p className="catalog-favorite-note">
+                  Cập nhật: {formatUpdatedAt(item.updatedAt)}
                 </p>
               ) : null}
             </div>

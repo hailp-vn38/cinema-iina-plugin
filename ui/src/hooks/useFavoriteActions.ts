@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { UI_COMMANDS } from "@shared/contracts/commands";
 import { iinaClient } from "../bridge/iinaClient";
 import { useAppStore } from "../store/appStore";
-import type { HistoryEntry } from "../store/types";
+import type { FavoriteEntry } from "../store/types";
 
 function createRequestId(prefix: string): string {
   return (
@@ -14,13 +14,13 @@ function createRequestId(prefix: string): string {
   );
 }
 
-export interface HistoryActions {
-  restoreHistoryEntry: (entry: HistoryEntry) => void;
-  removeHistory: (entryId: string) => void;
-  clearHistory: () => void;
+export interface FavoriteActions {
+  restoreFavoriteEntry: (entry: FavoriteEntry) => void;
+  removeFavorite: (entryId: string) => void;
+  clearFavorites: () => void;
 }
 
-export function useHistoryActions(): HistoryActions {
+export function useFavoriteActions(): FavoriteActions {
   const setStatus = useAppStore((state) => state.setStatus);
   const setPendingPlayRequest = useAppStore(
     (state) => state.setPendingPlayRequest,
@@ -28,20 +28,20 @@ export function useHistoryActions(): HistoryActions {
   const recordOutboundCommand = useAppStore(
     (state) => state.recordOutboundCommand,
   );
-  const removeHistoryEntry = useAppStore((state) => state.removeHistoryEntry);
-  const clearHistory = useAppStore((state) => state.clearHistory);
+  const removeFavoriteEntry = useAppStore((state) => state.removeFavoriteEntry);
+  const clearFavorites = useAppStore((state) => state.clearFavorites);
 
-  const restoreHistoryEntry = useCallback(
-    (entry: HistoryEntry): void => {
+  const restoreFavoriteEntry = useCallback(
+    (entry: FavoriteEntry): void => {
       if (!entry || !Array.isArray(entry.entries) || !entry.entries.length) {
-        setStatus("error", "Playlist lịch sử không còn hợp lệ.");
+        setStatus("error", "Playlist yêu thích không còn hợp lệ.");
         return;
       }
 
       const requestId = createRequestId("restore-playlist");
       setPendingPlayRequest(requestId);
       recordOutboundCommand(UI_COMMANDS.PLAY_ALL);
-      setStatus("loading", "Đang khôi phục playlist...");
+      setStatus("loading", "Đang mở playlist yêu thích...");
       iinaClient.post(UI_COMMANDS.PLAY_ALL, {
         requestId,
         sourceId: entry.sourceId || "",
@@ -58,16 +58,16 @@ export function useHistoryActions(): HistoryActions {
     [recordOutboundCommand, setPendingPlayRequest, setStatus],
   );
 
-  const removeHistory = useCallback(
+  const removeFavorite = useCallback(
     (entryId: string): void => {
-      removeHistoryEntry(entryId);
+      removeFavoriteEntry(entryId);
     },
-    [removeHistoryEntry],
+    [removeFavoriteEntry],
   );
 
   return {
-    restoreHistoryEntry,
-    removeHistory,
-    clearHistory,
+    restoreFavoriteEntry,
+    removeFavorite,
+    clearFavorites,
   };
 }

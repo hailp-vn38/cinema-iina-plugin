@@ -1,17 +1,17 @@
 import { useEffect, useRef } from "react";
-import { loadHistoryEntries, saveHistoryEntries } from "../lib/historyStorage";
+import { loadFavoriteEntries, saveFavoriteEntries } from "../lib/favoriteStorage";
 import { useAppStore } from "../store/appStore";
 
-export function useHistoryPersistence(): void {
-  const history = useAppStore((state) => state.history);
-  const hydrateHistory = useAppStore((state) => state.hydrateHistory);
+export function useFavoritePersistence(): void {
+  const favorites = useAppStore((state) => state.favorites);
+  const hydrateFavorites = useAppStore((state) => state.hydrateFavorites);
   const hydratedRef = useRef(false);
   const initialPersistSkippedRef = useRef(false);
 
   useEffect(() => {
-    hydrateHistory(loadHistoryEntries());
+    hydrateFavorites(loadFavoriteEntries());
     hydratedRef.current = true;
-  }, [hydrateHistory]);
+  }, [hydrateFavorites]);
 
   useEffect(() => {
     if (!hydratedRef.current) {
@@ -23,6 +23,6 @@ export function useHistoryPersistence(): void {
       return;
     }
 
-    saveHistoryEntries(history);
-  }, [history]);
+    saveFavoriteEntries(favorites);
+  }, [favorites]);
 }
